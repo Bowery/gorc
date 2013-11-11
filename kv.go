@@ -4,34 +4,35 @@ package client
 
 import (
 	"bytes"
-	"io"
+	"encoding/json"
 )
 
-func (client *Client) Get(collection, key string) (*bytes.Buffer, error) {
+func (client *Client) Get(collection string, key string, value interface{}) error {
 	resp, err := client.doRequest("GET", collection+"/"+key, nil)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, newError(resp)
+		return newError(resp)
 	}
 
-	// TODO: Check for a content-length header so we can pre-allocate buffer
-	// space.
-	buf := bytes.NewBuffer(nil)
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return nil, err
-	}
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(value)
 
-	return buf, nil
+	return err
 }
 
-func (client *Client) Put(collection, key string, value io.Reader) error {
-	resp, err := client.doRequest("PUT", collection+"/"+key, value)
+func (client *Client) Put(collection string, key string, value interface{}) error {
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+	encoder.Encode(value)
+
+	resp, err := client.doRequest("PUT", collection+"/"+key, buf)
+
 	if err != nil {
 		return err
 	}

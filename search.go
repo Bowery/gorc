@@ -14,11 +14,15 @@ type SearchResults struct {
 }
 
 type SearchResult struct {
-	Collection string                 `json:"collection"`
-	Key        string                 `json:"key"`
-	Ref        string                 `json:"ref"`
-	Score      float64                `json:"score"`
-	Value      map[string]interface{} `json:"value"`
+	Path  ResultPath             `json:"path"`
+	Score float64                `json:"score"`
+	Value map[string]interface{} `json:"value"`
+}
+
+type ResultPath struct {
+	Collection string `json:"collection"`
+	Key        string `json:"key"`
+	Ref        string `json:"ref"`
 }
 
 func (client *Client) Search(collection, query string) (*SearchResults, error) {
