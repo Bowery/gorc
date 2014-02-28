@@ -5,12 +5,13 @@ package client
 import (
 	"encoding/json"
 	"net/url"
+	"strconv"
 )
 
 type SearchResults struct {
-	Count    uint64         `json:"count"`
-	Results  []SearchResult `json:"results"`
-	MaxScore float64        `json:"max_score"`
+	Count      uint64         `json:"count"`
+	TotalCount uint64         `json:"total_count"`
+	Results    []SearchResult `json:"results"`
 }
 
 type SearchResult struct {
@@ -25,9 +26,11 @@ type ResultPath struct {
 	Ref        string `json:"ref"`
 }
 
-func (client *Client) Search(collection, query string) (*SearchResults, error) {
+func (client *Client) Search(collection string, query string, limit int, offset int) (*SearchResults, error) {
 	queryVariables := url.Values{
-		"query": []string{query},
+		"query":  []string{query},
+		"limit":  []string{strconv.Itoa(limit)},
+		"offset": []string{strconv.Itoa(offset)},
 	}
 
 	resp, err := client.doRequest("GET", collection+"?"+queryVariables.Encode(), nil)
