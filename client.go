@@ -29,9 +29,10 @@ type Client struct {
 // An implementation of 'error' that exposes all the orchestrate specific
 // error details.
 type OrchestrateError struct {
-	Status  string
+	Status  string `json:"-"`
+	StatusCode int `json:"-"`
 	Message string `json:"message"`
-	Locator string `json:"locator"`
+	Code string 	 `json:"code"`
 }
 
 // Returns a new Client object that will use the given authToken for
@@ -51,6 +52,7 @@ func newError(resp *http.Response) error {
 	decoder.Decode(orchestrateError)
 
 	orchestrateError.Status = resp.Status
+	orchestrateError.StatusCode = resp.StatusCode
 
 	return orchestrateError
 }
