@@ -33,6 +33,10 @@ func (client *Client) GetEvents(collection string, key string, kind string) (*Ev
 	results := new(EventResults)
 	err = decoder.Decode(results)
 
+	if err != nil {
+		return nil, err
+	}
+
 	return results, err
 }
 

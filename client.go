@@ -32,7 +32,7 @@ type OrchestrateError struct {
 	Status  string `json:"-"`
 	StatusCode int `json:"-"`
 	Message string `json:"message"`
-	Code string 	 `json:"code"`
+	Code string    `json:"code"`
 }
 
 // Returns a new Client object that will use the given authToken for
@@ -57,8 +57,8 @@ func newError(resp *http.Response) error {
 	return orchestrateError
 }
 
-func (e *OrchestrateError) Error() string {
-	return fmt.Sprintf(`%v: %v`, e.Status, e.Message)
+func (e OrchestrateError) Error() string {
+	return fmt.Sprintf(`%v (%v): %v`, e.Status, e.StatusCode, e.Message)
 }
 
 func (client *Client) doRequest(method, trailingPath string, body io.Reader) (*http.Response, error) {
