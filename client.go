@@ -14,12 +14,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	r "reflect"
+	"time"
 )
 
 // The root path for all API endpoints.
 const rootUri = "https://api.orchestrate.io/v0/"
+
+var (
+	Timeout = 5 * time.Second
+	Transport http.RoundTripper = &http.Transport{
+		MaxIdleConnsPerHost: 100,
+		ResponseHeaderTimeout: Timeout,
+		Dial: func (network, addr string) (net.Conn, error) {
+			return net.DialTimeout(network, addr, Timeout)
+		},
+	}
+)
 
 type Client struct {
 	httpClient *http.Client
@@ -40,7 +53,7 @@ type OrchestrateError struct {
 // at http://dashboard.orchestrate.io
 func NewClient(authToken string) *Client {
 	return &Client{
-		httpClient: &http.Client{},
+		httpClient: &http.Client{Transport: Transport},
 		authToken:  authToken,
 	}
 }
