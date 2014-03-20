@@ -42,3 +42,20 @@ func (client Client) Put(collection string, key string, value io.Reader) error {
 
 	return err
 }
+
+func (client Client) Delete(collection string, key string) error {
+	resp, err := client.doRequest("DELETE", collection+"/"+key, nil)
+
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 204 {
+		return newError(resp)
+	}
+
+	return err
+}
