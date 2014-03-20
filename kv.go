@@ -1,16 +1,16 @@
+// Copyright 2014, Orchestrate.IO, Inc.
+
 package client
 
 import (
 	"bytes"
 	"io"
-	"log"
 )
 
-func (client Client) Get(collection string, key string) (*bytes.Buffer, error) {
+func (client *Client) Get(collection, key string) (*bytes.Buffer, error) {
 	resp, err := client.doRequest("GET", collection+"/"+key, nil)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
@@ -20,34 +20,34 @@ func (client Client) Get(collection string, key string) (*bytes.Buffer, error) {
 		return nil, newError(resp)
 	}
 
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
+	// TODO: Check for a content-length header so we can pre-allocate buffer
+	// space.
+	buf := bytes.NewBuffer(nil)
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return nil, err
+	}
 
-	return buf, err
+	return buf, nil
 }
 
-func (client Client) Put(collection string, key string, value io.Reader) error {
+func (client *Client) Put(collection, key string, value io.Reader) error {
 	resp, err := client.doRequest("PUT", collection+"/"+key, value)
-
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		err = newError(resp)
+		return newError(resp)
 	}
 
-	return err
+	return nil
 }
 
-func (client Client) Delete(collection string, key string) error {
+func (client *Client) Delete(collection, key string) error {
 	resp, err := client.doRequest("DELETE", collection+"/"+key, nil)
-
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
@@ -57,5 +57,5 @@ func (client Client) Delete(collection string, key string) error {
 		return newError(resp)
 	}
 
-	return err
+	return nil
 }
