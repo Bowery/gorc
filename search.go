@@ -1,8 +1,9 @@
+// Copyright 2014, Orchestrate.IO, Inc.
+
 package client
 
 import (
 	"encoding/json"
-	"log"
 	"net/url"
 )
 
@@ -20,15 +21,13 @@ type SearchResult struct {
 	Value      map[string]interface{} `json:"value"`
 }
 
-func (client Client) Search(collection string, query string) (*SearchResults, error) {
+func (client *Client) Search(collection, query string) (*SearchResults, error) {
 	queryVariables := url.Values{
 		"query": []string{query},
 	}
 
 	resp, err := client.doRequest("GET", collection+"?"+queryVariables.Encode(), nil)
-
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
@@ -40,11 +39,9 @@ func (client Client) Search(collection string, query string) (*SearchResults, er
 
 	decoder := json.NewDecoder(resp.Body)
 	result := new(SearchResults)
-	err = decoder.Decode(result)
-
-	if err != nil {
-		log.Fatal(err)
+	if err := decoder.Decode(result); err != nil {
+		return result, err
 	}
 
-	return result, err
+	return result, nil
 }
