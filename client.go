@@ -34,6 +34,7 @@ var (
 	}
 )
 
+// An Orchestrate Client object.
 type Client struct {
 	httpClient *http.Client
 	authToken  string
@@ -48,6 +49,7 @@ type OrchestrateError struct {
 	Code       string `json:"code"`
 }
 
+// A representation of a Key/Value object's Orchestrate Path.
 type Path struct {
 	Collection string `json:"collection"`
 	Key        string `json:"key"`
@@ -80,6 +82,7 @@ func (e OrchestrateError) Error() string {
 	return fmt.Sprintf(`%v (%v): %v`, e.Status, e.StatusCode, e.Message)
 }
 
+// Executes an HTTP request with the given client object.
 func (client *Client) doRequest(method, trailing string, headers map[string]string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, rootUri+trailing, body)
 	if err != nil {

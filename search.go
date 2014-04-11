@@ -9,6 +9,7 @@ import (
 	"strconv"
 )
 
+// Holds results returned from a Search query.
 type SearchResults struct {
 	Count      uint64         `json:"count"`
 	TotalCount uint64         `json:"total_count"`
@@ -17,12 +18,16 @@ type SearchResults struct {
 	Prev       string         `json:"prev,omitempty"`
 }
 
+// An individual search result.
 type SearchResult struct {
 	Path     Path            `json:"path"`
 	Score    float64         `json:"score"`
 	RawValue json.RawMessage `json:"value"`
 }
 
+// Search a collection with a Lucene Query Parser Syntax Query
+// (http://lucene.apache.org/core/4_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Overview)
+// and with a specified size limit and offset.
 func (client *Client) Search(collection string, query string, limit int, offset int) (*SearchResults, error) {
 	queryVariables := url.Values{
 		"query":  []string{query},
@@ -35,14 +40,17 @@ func (client *Client) Search(collection string, query string, limit int, offset 
 	return client.doSearch(trailingUri)
 }
 
+// Get the page of search results that follow that provided set.
 func (client *Client) SearchGetNext(results *SearchResults) (*SearchResults, error) {
 	return client.doSearch(results.Next[4:])
 }
 
+// Get the page of search results that precede that provided set.
 func (client *Client) SearchGetPrev(results *SearchResults) (*SearchResults, error) {
 	return client.doSearch(results.Prev[4:])
 }
 
+// Execute a search request.
 func (client *Client) doSearch(trailingUri string) (*SearchResults, error) {
 	resp, err := client.doRequest("GET", trailingUri, nil, nil)
 	if err != nil {
@@ -64,14 +72,17 @@ func (client *Client) doSearch(trailingUri string) (*SearchResults, error) {
 	return result, nil
 }
 
+// Check if there is a subsequent page of search results.
 func (results *SearchResults) HasNext() bool {
 	return results.Next != ""
 }
 
+// Check if there is a previous page of search results.
 func (results *SearchResults) HasPrev() bool {
 	return results.Prev != ""
 }
 
+// Marshall the value of a SearchResult into the provided object.
 func (result *SearchResult) Value(value interface{}) error {
 	return json.Unmarshal(result.RawValue, value)
 }
