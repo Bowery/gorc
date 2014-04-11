@@ -16,7 +16,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	r "reflect"
 	"time"
 )
 
@@ -98,30 +97,4 @@ func (client *Client) doRequest(method, trailing string, headers map[string]stri
 	}
 
 	return client.httpClient.Do(req)
-}
-
-func ValueToStruct(value map[string]interface{}, dest interface{}) bool {
-	structVal := r.Indirect(r.ValueOf(dest))
-	structType := structVal.Type()
-
-	for i := 0; i < structType.NumField(); i++ {
-		structField := structType.Field(i)
-		name := structField.Name
-
-		if jField := structField.Tag.Get("json"); jField != "" {
-			name = jField
-		}
-
-		if fieldValue, present := value[name]; present {
-			fieldVal := r.ValueOf(fieldValue)
-
-			if fieldVal.Type() != structField.Type {
-				fieldVal = fieldVal.Convert(structField.Type)
-			}
-
-			structVal.FieldByName(structField.Name).Set(fieldVal)
-		}
-	}
-
-	return true
 }
