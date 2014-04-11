@@ -3,6 +3,7 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -51,7 +52,18 @@ func (client *Client) GetEvents(collection string, key string, kind string, star
 	return results, err
 }
 
-func (client *Client) PutEvent(collection, key, kind string, value io.Reader) error {
+func (client *Client) PutEvent(collection, key, kind string, value interface{}) error {
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+
+	if err := encoder.Encode(value); err != nil {
+		return err
+	}
+
+	return client.PutEventRaw(collection, key, kind, buf)
+}
+
+func (client *Client) PutEventRaw(collection, key, kind string, value io.Reader) error {
 	resp, err := client.doRequest("PUT", collection+"/"+key+"/events/"+kind, nil, value)
 	if err != nil {
 		return err
