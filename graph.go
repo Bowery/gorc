@@ -14,16 +14,14 @@ type GraphResults struct {
 }
 
 type GraphResult struct {
-	Path  ResultPath             `json:"path"`
-	Key   string                 `json:"key"`
-	Ref   string                 `json:"ref"`
-	Value map[string]interface{} `json:"value"`
+	Path     Path            `json:"path"`
+	RawValue json.RawMessage `json:"value"`
 }
 
 func (client *Client) GetRelations(collection string, key string, hops []string) (*GraphResults, error) {
 	relationsPath := strings.Join(hops, "/")
 
-	resp, err := client.doRequest("GET", fmt.Sprintf("%v/%v/relations/%v", collection, key, relationsPath), nil)
+	resp, err := client.doRequest("GET", fmt.Sprintf("%v/%v/relations/%v", collection, key, relationsPath), nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -45,7 +43,7 @@ func (client *Client) GetRelations(collection string, key string, hops []string)
 }
 
 func (client *Client) PutRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
-	resp, err := client.doRequest("PUT", fmt.Sprintf("%v/%v/relation/%v/%v/%v", sourceCollection, sourceKey, kind, sinkCollection, sinkKey), nil)
+	resp, err := client.doRequest("PUT", fmt.Sprintf("%v/%v/relation/%v/%v/%v", sourceCollection, sourceKey, kind, sinkCollection, sinkKey), nil, nil)
 
 	if err != nil {
 		return err
@@ -57,4 +55,8 @@ func (client *Client) PutRelation(sourceCollection string, sourceKey string, kin
 		return newError(resp)
 	}
 	return nil
+}
+
+func (result *GraphResult) Value(value interface{}) error {
+	return json.Unmarshal(result.RawValue, value)
 }

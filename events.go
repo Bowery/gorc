@@ -4,7 +4,10 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/url"
+	"strconv"
 )
 
 type EventResults struct {
@@ -13,12 +16,20 @@ type EventResults struct {
 }
 
 type Event struct {
-	Timestamp uint64                 `json:"timestamp"`
-	Value     map[string]interface{} `json:"value"`
+	Ordinal   uint64          `json:"ordinal"`
+	Timestamp uint64          `json:"timestamp"`
+	RawValue  json.RawMessage `json:"value"`
 }
 
-func (client *Client) GetEvents(collection string, key string, kind string) (*EventResults, error) {
-	resp, err := client.doRequest("GET", collection+"/"+key+"/events/"+kind, nil)
+func (client *Client) GetEvents(collection string, key string, kind string, start uint64, end uint64) (*EventResults, error) {
+	queryVariables := url.Values{
+		"start": []string{strconv.FormatUint(start, 10)},
+		"end":   []string{strconv.FormatUint(end, 10)},
+	}
+
+	trailingUri := fmt.Sprintf("%s/%s/events/%s?%s", collection, key, kind, queryVariables.Encode())
+
+	resp, err := client.doRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +52,7 @@ func (client *Client) GetEvents(collection string, key string, kind string) (*Ev
 }
 
 func (client *Client) PutEvent(collection, key, kind string, value io.Reader) error {
-	resp, err := client.doRequest("PUT", collection+"/"+key+"/events/"+kind, value)
+	resp, err := client.doRequest("PUT", collection+"/"+key+"/events/"+kind, nil, value)
 	if err != nil {
 		return err
 	}
@@ -52,4 +63,8 @@ func (client *Client) PutEvent(collection, key, kind string, value io.Reader) er
 		return newError(resp)
 	}
 	return nil
+}
+
+func (result *Event) Value(value interface{}) error {
+	return json.Unmarshal(result.RawValue, value)
 }

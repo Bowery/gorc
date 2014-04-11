@@ -4,6 +4,7 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"strconv"
 )
@@ -12,18 +13,14 @@ type SearchResults struct {
 	Count      uint64         `json:"count"`
 	TotalCount uint64         `json:"total_count"`
 	Results    []SearchResult `json:"results"`
+	Next       string         `json:"next,omitempty"`
+	Prev       string         `json:"prev,omitempty"`
 }
 
 type SearchResult struct {
-	Path  ResultPath             `json:"path"`
-	Score float64                `json:"score"`
-	Value map[string]interface{} `json:"value"`
-}
-
-type ResultPath struct {
-	Collection string `json:"collection"`
-	Key        string `json:"key"`
-	Ref        string `json:"ref"`
+	Path     Path            `json:"path"`
+	Score    float64         `json:"score"`
+	RawValue json.RawMessage `json:"value"`
 }
 
 func (client *Client) Search(collection string, query string, limit int, offset int) (*SearchResults, error) {
@@ -33,7 +30,21 @@ func (client *Client) Search(collection string, query string, limit int, offset 
 		"offset": []string{strconv.Itoa(offset)},
 	}
 
-	resp, err := client.doRequest("GET", collection+"?"+queryVariables.Encode(), nil)
+	trailingUri := fmt.Sprintf("%s?%s", collection, queryVariables.Encode())
+
+	return client.doSearch(trailingUri)
+}
+
+func (client *Client) SearchGetNext(results *SearchResults) (*SearchResults, error) {
+	return client.doSearch(results.Next[4:])
+}
+
+func (client *Client) SearchGetPrev(results *SearchResults) (*SearchResults, error) {
+	return client.doSearch(results.Prev[4:])
+}
+
+func (client *Client) doSearch(trailingUri string) (*SearchResults, error) {
+	resp, err := client.doRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -51,4 +62,16 @@ func (client *Client) Search(collection string, query string, limit int, offset 
 	}
 
 	return result, nil
+}
+
+func (results *SearchResults) HasNext() bool {
+	return results.Next != ""
+}
+
+func (results *SearchResults) HasPrev() bool {
+	return results.Prev != ""
+}
+
+func (result *SearchResult) Value(value interface{}) error {
+	return json.Unmarshal(result.RawValue, value)
 }

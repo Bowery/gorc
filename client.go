@@ -24,9 +24,10 @@ import (
 const rootUri = "https://api.orchestrate.io/v0/"
 
 var (
-	Timeout = 5 * time.Second
+	Timeout = 3 * time.Second
+	MaxIdleConns = 40
 	Transport http.RoundTripper = &http.Transport{
-		MaxIdleConnsPerHost: 100,
+		MaxIdleConnsPerHost: MaxIdleConns,
 		ResponseHeaderTimeout: Timeout,
 		Dial: func (network, addr string) (net.Conn, error) {
 			return net.DialTimeout(network, addr, Timeout)
@@ -46,6 +47,12 @@ type OrchestrateError struct {
 	StatusCode int `json:"-"`
 	Message string `json:"message"`
 	Code string    `json:"code"`
+}
+
+type Path struct {
+	Collection string `json:"collection"`
+	Key        string `json:"key"`
+	Ref        string `json:"ref"`
 }
 
 // Returns a new Client object that will use the given authToken for
@@ -74,13 +81,17 @@ func (e OrchestrateError) Error() string {
 	return fmt.Sprintf(`%v (%v): %v`, e.Status, e.StatusCode, e.Message)
 }
 
-func (client *Client) doRequest(method, trailingPath string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, rootUri+trailingPath, body)
+func (client *Client) doRequest(method, trailing string, headers map[string]string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, rootUri+trailing, body)
 	if err != nil {
 		return nil, err
 	}
 
 	req.SetBasicAuth(client.authToken, "")
+
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
 
 	if method == "PUT" {
 		req.Header.Add("Content-Type", "application/json")
