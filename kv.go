@@ -192,7 +192,7 @@ func (client *Client) List(collection string, limit int) (*KVResults, error) {
 
 func (client *Client) ListAfter(collection string, after string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
-		"limit": []string{strconv.Itoa(limit)},
+		"limit":    []string{strconv.Itoa(limit)},
 		"afterKey": []string{after},
 	}
 
@@ -203,7 +203,7 @@ func (client *Client) ListAfter(collection string, after string, limit int) (*KV
 
 func (client *Client) ListStart(collection string, start string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
-		"limit": []string{strconv.Itoa(limit)},
+		"limit":    []string{strconv.Itoa(limit)},
 		"startKey": []string{start},
 	}
 
@@ -245,7 +245,6 @@ func (results *KVResults) HasNext() bool {
 func (result *KVResult) Value(value interface{}) error {
 	return json.Unmarshal(result.RawValue, value)
 }
-
 
 func (path *Path) trailingGetURI() string {
 	if path.Ref != "" {

@@ -24,12 +24,12 @@ import (
 const rootUri = "https://api.orchestrate.io/v0/"
 
 var (
-	Timeout = 3 * time.Second
-	MaxIdleConns = 40
-	Transport http.RoundTripper = &http.Transport{
-		MaxIdleConnsPerHost: MaxIdleConns,
+	Timeout                        = 3 * time.Second
+	MaxIdleConns                   = 40
+	Transport    http.RoundTripper = &http.Transport{
+		MaxIdleConnsPerHost:   MaxIdleConns,
 		ResponseHeaderTimeout: Timeout,
-		Dial: func (network, addr string) (net.Conn, error) {
+		Dial: func(network, addr string) (net.Conn, error) {
 			return net.DialTimeout(network, addr, Timeout)
 		},
 	}
@@ -43,10 +43,10 @@ type Client struct {
 // An implementation of 'error' that exposes all the orchestrate specific
 // error details.
 type OrchestrateError struct {
-	Status  string `json:"-"`
-	StatusCode int `json:"-"`
-	Message string `json:"message"`
-	Code string    `json:"code"`
+	Status     string `json:"-"`
+	StatusCode int    `json:"-"`
+	Message    string `json:"message"`
+	Code       string `json:"code"`
 }
 
 type Path struct {
