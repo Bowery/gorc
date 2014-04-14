@@ -4,7 +4,6 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 )
 
@@ -24,7 +23,8 @@ type GraphResult struct {
 func (client *Client) GetRelations(collection string, key string, hops []string) (*GraphResults, error) {
 	relationsPath := strings.Join(hops, "/")
 
-	resp, err := client.doRequest("GET", fmt.Sprintf("%v/%v/relations/%v", collection, key, relationsPath), nil, nil)
+	trailingUri := collection+"/"+key+"/relations/"+relationsPath
+	resp, err := client.doRequest("GET", trailingUri, nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -47,7 +47,8 @@ func (client *Client) GetRelations(collection string, key string, hops []string)
 
 // Create a relationship of a specified type between two collection-keys.
 func (client *Client) PutRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
-	resp, err := client.doRequest("PUT", fmt.Sprintf("%v/%v/relation/%v/%v/%v", sourceCollection, sourceKey, kind, sinkCollection, sinkKey), nil, nil)
+	trailingUri := sourceCollection+"/"+sourceKey+"/relation/"+kind+"/"+sinkCollection+"/"+sinkKey
+	resp, err := client.doRequest("PUT", trailingUri, nil, nil)
 
 	if err != nil {
 		return err

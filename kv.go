@@ -5,7 +5,6 @@ package client
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/url"
 	"strconv"
@@ -72,25 +71,7 @@ func (client *Client) Put(collection string, key string, value interface{}) (*Pa
 
 // Store a value to a collection-key pair.
 func (client *Client) PutRaw(collection string, key string, value io.Reader) (*Path, error) {
-	resp, err := client.doRequest("PUT", collection+"/"+key, nil, value)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 201 {
-		return nil, newError(resp)
-	}
-
-	ref := strings.SplitAfter(resp.Header.Get("Location"), "/")[5]
-
-	return &Path{
-		Collection: collection,
-		Key:        key,
-		Ref:        ref,
-	}, err
+	return client.doPut(&Path{Collection: collection, Key: key}, nil, value)
 }
 
 // Store a value to a collection-key pair if the path's ref value is the latest.
@@ -108,9 +89,34 @@ func (client *Client) PutIfUnmodified(path *Path, value interface{}) (*Path, err
 // Store a value to a collection-key pair if the path's ref value is the latest.
 func (client *Client) PutIfUnmodifiedRaw(path *Path, value io.Reader) (*Path, error) {
 	headers := map[string]string{
-		"If-Match": fmt.Sprintf("\"%s\"", path.Ref),
+		"If-Match": "\""+path.Ref+"\"",
 	}
 
+	return client.doPut(path, headers, value)
+}
+
+// Store a value to a collection-key pair if it doesn't already hold a value.
+func (client *Client) PutIfAbsent(collection string, key string, value interface{}) (*Path, error) {
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+
+	if err := encoder.Encode(value); err != nil {
+		return nil, err
+	}
+
+	return client.PutIfAbsentRaw(collection, key, buf)
+}
+
+// Store a value to a collection-key pair if it doesn't already hold a value.
+func (client *Client) PutIfAbsentRaw(collection string, key string, value io.Reader) (*Path, error) {
+	headers := map[string]string{
+		"If-None-Match": "\"*\"",
+	}
+
+	return client.doPut(&Path{Collection: collection, Key: key}, headers, value)
+}
+
+func (client *Client) doPut(path *Path, headers map[string]string, value io.Reader) (*Path, error) {
 	resp, err := client.doRequest("PUT", path.trailingPutURI(), headers, value)
 
 	if err != nil {
@@ -132,101 +138,34 @@ func (client *Client) PutIfUnmodifiedRaw(path *Path, value io.Reader) (*Path, er
 	}, err
 }
 
-// Store a value to a collection-key pair if it doesn't already hold a value.
-func (client *Client) PutIfAbsent(collection string, key string, value interface{}) (*Path, error) {
-	buf := new(bytes.Buffer)
-	encoder := json.NewEncoder(buf)
-
-	if err := encoder.Encode(value); err != nil {
-		return nil, err
-	}
-
-	return client.PutIfAbsentRaw(collection, key, buf)
-}
-
-// Store a value to a collection-key pair if it doesn't already hold a value.
-func (client *Client) PutIfAbsentRaw(collection string, key string, value io.Reader) (*Path, error) {
-	headers := map[string]string{
-		"If-None-Match": "\"*\"",
-	}
-
-	resp, err := client.doRequest("PUT", collection+"/"+key, headers, value)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 201 {
-		return nil, newError(resp)
-	}
-
-	ref := strings.SplitAfter(resp.Header.Get("Location"), "/")[5]
-
-	return &Path{
-		Collection: collection,
-		Key:        key,
-		Ref:        ref,
-	}, err
-}
-
 // Delete the value held at a collection-key pair.
 func (client *Client) Delete(collection, key string) error {
-	resp, err := client.doRequest("DELETE", collection+"/"+key, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 204 {
-		return newError(resp)
-	}
-
-	return nil
+	return client.doDelete(collection+"/"+key, nil)
 }
 
 // Delete the value held at a collection-key par if the path's ref value is the
 // latest.
 func (client *Client) DeleteIfUnmodified(path *Path) error {
 	headers := map[string]string{
-		"If-Match": fmt.Sprintf("\"%s\"", path.Ref),
+		"If-Match": "\""+path.Ref+"\"",
 	}
 
-	resp, err := client.doRequest("DELETE", path.trailingPutURI(), headers, nil)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 204 {
-		return newError(resp)
-	}
-
-	return nil
+	return client.doDelete(path.trailingPutURI(), headers)
 }
 
 // Delete the current and all previous values from a collection-key pair.
 func (client *Client) Purge(collection, key string) error {
-	resp, err := client.doRequest("DELETE", collection+"/"+key+"?purge=true", nil, nil)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 204 {
-		return newError(resp)
-	}
-
-	return nil
+	return client.doDelete(collection+"/"+key+"?purge=true", nil)
 }
 
 // Delete a collection.
 func (client *Client) DeleteCollection(collection string) error {
-	resp, err := client.doRequest("DELETE", collection+"?force=true", nil, nil)
+	return client.doDelete(collection+"?force=true", nil)
+}
+
+// Execute delete
+func (client *Client) doDelete(trailingUri string, headers map[string]string) error {
+	resp, err := client.doRequest("DELETE", trailingUri, headers, nil)
 	if err != nil {
 		return err
 	}
@@ -246,7 +185,7 @@ func (client *Client) List(collection string, limit int) (*KVResults, error) {
 		"limit": []string{strconv.Itoa(limit)},
 	}
 
-	trailingUri := fmt.Sprintf("%s?%s", collection, queryVariables.Encode())
+	trailingUri := collection+"?"+queryVariables.Encode()
 
 	return client.doList(trailingUri)
 }
@@ -259,7 +198,7 @@ func (client *Client) ListAfter(collection string, after string, limit int) (*KV
 		"afterKey": []string{after},
 	}
 
-	trailingUri := fmt.Sprintf("%s?%s", collection, queryVariables.Encode())
+	trailingUri := collection+"?"+queryVariables.Encode()
 
 	return client.doList(trailingUri)
 }
@@ -272,7 +211,7 @@ func (client *Client) ListStart(collection string, start string, limit int) (*KV
 		"startKey": []string{start},
 	}
 
-	trailingUri := fmt.Sprintf("%s?%s", collection, queryVariables.Encode())
+	trailingUri := collection+"?"+queryVariables.Encode()
 
 	return client.doList(trailingUri)
 }
@@ -318,12 +257,12 @@ func (result *KVResult) Value(value interface{}) error {
 // Returns the trailing URI part for a GET request.
 func (path *Path) trailingGetURI() string {
 	if path.Ref != "" {
-		return fmt.Sprintf("%s/%s/refs/%s", path.Collection, path.Key, path.Ref)
+		return path.Collection+"/"+path.Key+"/refs/"+path.Ref
 	}
-	return fmt.Sprintf("%s/%s", path.Collection, path.Key)
+	return path.Collection+"/"+path.Key
 }
 
 // Returns the trailing URI part for a PUT request.
 func (path *Path) trailingPutURI() string {
-	return fmt.Sprintf("%s/%s", path.Collection, path.Key)
+	return path.Collection+"/"+path.Key
 }

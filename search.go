@@ -4,7 +4,6 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strconv"
 )
@@ -35,7 +34,7 @@ func (client *Client) Search(collection string, query string, limit int, offset 
 		"offset": []string{strconv.Itoa(offset)},
 	}
 
-	trailingUri := fmt.Sprintf("%s?%s", collection, queryVariables.Encode())
+	trailingUri := collection+"?"+queryVariables.Encode()
 
 	return client.doSearch(trailingUri)
 }

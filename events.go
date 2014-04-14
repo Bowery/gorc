@@ -5,7 +5,6 @@ package client
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/url"
 	"strconv"
@@ -26,7 +25,7 @@ type Event struct {
 
 // Get latest events of a particular type from specified collection-key pair.
 func (client *Client) GetEvents(collection string, key string, kind string) (*EventResults, error) {
-	trailingUri := fmt.Sprintf("%s/%s/events/%s", collection, key, kind)
+	trailingUri := collection+"/"+key+"/events/"+kind
 
 	return client.doGetEvents(trailingUri)
 }
@@ -39,7 +38,7 @@ func (client *Client) GetEventsInRange(collection string, key string, kind strin
 		"end":   []string{strconv.FormatInt(end, 10)},
 	}
 
-	trailingUri := fmt.Sprintf("%s/%s/events/%s?%s", collection, key, kind, queryVariables.Encode())
+	trailingUri := collection+"/"+key+"/events/"+kind+"?"+queryVariables.Encode()
 
 	return client.doGetEvents(trailingUri)
 }
@@ -58,7 +57,7 @@ func (client *Client) PutEvent(collection, key, kind string, value interface{}) 
 
 // Put an event of the specified type to provided collection-key pair.
 func (client *Client) PutEventRaw(collection, key, kind string, value io.Reader) error {
-	trailingUri := fmt.Sprintf("%v/%v/events/%v", collection, key, kind)
+	trailingUri := collection+"/"+key+"/events/"+kind
 
 	return client.doPutEvent(trailingUri, value)
 
@@ -82,7 +81,7 @@ func (client *Client) PutEventWithTimeRaw(collection, key, kind string, time int
 		"timestamp": []string{strconv.FormatInt(time, 10)},
 	}
 
-	trailingUri := fmt.Sprintf("%v/%v/events/%v?%v", collection, key, kind, queryVariables.Encode())
+	trailingUri := collection+"/"+key+"/events/"+kind+"?"+queryVariables.Encode()
 
 	return client.doPutEvent(trailingUri, value)
 }

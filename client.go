@@ -79,7 +79,7 @@ func newError(resp *http.Response) error {
 }
 
 func (e OrchestrateError) Error() string {
-	return fmt.Sprintf(`%v (%v): %v`, e.Status, e.StatusCode, e.Message)
+	return fmt.Sprintf(`%s (%d): %s`, e.Status, e.StatusCode, e.Message)
 }
 
 // Executes an HTTP request with the given client object.
