@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 // Holds results returned from a KV list query.
@@ -50,6 +51,10 @@ func (client *Client) GetPath(path *Path) (*KVResult, error) {
 		return nil, err
 	}
 
+	if path.Ref == "" {
+		path.Ref = strings.SplitAfter(resp.Header.Get("Content-Location"), "/")[5]
+	}
+
 	return &KVResult{Path: *path, RawValue: buf.Bytes()}, nil
 }
 
@@ -79,10 +84,12 @@ func (client *Client) PutRaw(collection string, key string, value io.Reader) (*P
 		return nil, newError(resp)
 	}
 
+	ref := strings.SplitAfter(resp.Header.Get("Location"), "/")[5]
+
 	return &Path{
 		Collection: collection,
 		Key:        key,
-		Ref:        resp.Header.Get("Location"),
+		Ref:        ref,
 	}, err
 }
 
@@ -116,10 +123,12 @@ func (client *Client) PutIfUnmodifiedRaw(path *Path, value io.Reader) (*Path, er
 		return nil, newError(resp)
 	}
 
+	ref := strings.SplitAfter(resp.Header.Get("Location"), "/")[5]
+
 	return &Path{
 		Collection: path.Collection,
 		Key:        path.Key,
-		Ref:        resp.Header.Get("Location"),
+		Ref:        ref,
 	}, err
 }
 
@@ -153,10 +162,12 @@ func (client *Client) PutIfAbsentRaw(collection string, key string, value io.Rea
 		return nil, newError(resp)
 	}
 
+	ref := strings.SplitAfter(resp.Header.Get("Location"), "/")[5]
+
 	return &Path{
 		Collection: collection,
 		Key:        key,
-		Ref:        resp.Header.Get("Location"),
+		Ref:        ref,
 	}, err
 }
 
@@ -270,7 +281,7 @@ func (result *KVResult) Value(value interface{}) error {
 // Returns the trailing URI part for a GET request.
 func (path *Path) trailingGetURI() string {
 	if path.Ref != "" {
-		return fmt.Sprintf("%s/%s/ref/%s", path.Collection, path.Key, path.Ref)
+		return fmt.Sprintf("%s/%s/refs/%s", path.Collection, path.Key, path.Ref)
 	}
 	return fmt.Sprintf("%s/%s", path.Collection, path.Key)
 }

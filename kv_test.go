@@ -22,7 +22,7 @@ func TestKVTrailingGetUri(t *testing.T) {
 		if path.Ref == "" {
 			return path.trailingGetURI() == path.Collection+"/"+path.Key
 		}
-		return path.trailingGetURI() == path.Collection+"/"+path.Key+"/ref/"+path.Ref
+		return path.trailingGetURI() == path.Collection+"/"+path.Key+"/refs/"+path.Ref
 	}
 
 	if err := quick.Check(f, nil); err != nil {
