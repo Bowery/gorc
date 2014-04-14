@@ -41,7 +41,7 @@ Usage examples
     }
 
     // Get Events
-    events, _ := c.GetEvents("collection", "key", "kind", startTime, endTime)
+    events, _ := c.GetEvents("collection", "key", "kind")
 
     // Put Events
     c.PutEvent("collection", "key", "kind", domainObject)
