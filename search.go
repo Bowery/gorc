@@ -34,7 +34,7 @@ func (c *Client) Search(collection string, query string, limit int, offset int) 
 		"offset": []string{strconv.Itoa(offset)},
 	}
 
-	trailingUri := collection+"?"+queryVariables.Encode()
+	trailingUri := collection + "?" + queryVariables.Encode()
 
 	return c.doSearch(trailingUri)
 }

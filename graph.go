@@ -23,7 +23,7 @@ type GraphResult struct {
 func (c *Client) GetRelations(collection string, key string, hops []string) (*GraphResults, error) {
 	relationsPath := strings.Join(hops, "/")
 
-	trailingUri := collection+"/"+key+"/relations/"+relationsPath
+	trailingUri := collection + "/" + key + "/relations/" + relationsPath
 	resp, err := c.doRequest("GET", trailingUri, nil, nil)
 
 	if err != nil {
@@ -47,7 +47,7 @@ func (c *Client) GetRelations(collection string, key string, hops []string) (*Gr
 
 // Create a relationship of a specified type between two collection-keys.
 func (c *Client) PutRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
-	trailingUri := sourceCollection+"/"+sourceKey+"/relation/"+kind+"/"+sinkCollection+"/"+sinkKey
+	trailingUri := sourceCollection + "/" + sourceKey + "/relation/" + kind + "/" + sinkCollection + "/" + sinkKey
 	resp, err := c.doRequest("PUT", trailingUri, nil, nil)
 
 	if err != nil {

@@ -89,7 +89,7 @@ func (c *Client) PutIfUnmodified(path *Path, value interface{}) (*Path, error) {
 // Store a value to a collection-key pair if the path's ref value is the latest.
 func (c *Client) PutIfUnmodifiedRaw(path *Path, value io.Reader) (*Path, error) {
 	headers := map[string]string{
-		"If-Match": "\""+path.Ref+"\"",
+		"If-Match": "\"" + path.Ref + "\"",
 	}
 
 	return c.doPut(path, headers, value)
@@ -148,7 +148,7 @@ func (c *Client) Delete(collection, key string) error {
 // latest.
 func (c *Client) DeleteIfUnmodified(path *Path) error {
 	headers := map[string]string{
-		"If-Match": "\""+path.Ref+"\"",
+		"If-Match": "\"" + path.Ref + "\"",
 	}
 
 	return c.doDelete(path.trailingPutURI(), headers)
@@ -186,7 +186,7 @@ func (c *Client) List(collection string, limit int) (*KVResults, error) {
 		"limit": []string{strconv.Itoa(limit)},
 	}
 
-	trailingUri := collection+"?"+queryVariables.Encode()
+	trailingUri := collection + "?" + queryVariables.Encode()
 
 	return c.doList(trailingUri)
 }
@@ -199,7 +199,7 @@ func (c *Client) ListAfter(collection string, after string, limit int) (*KVResul
 		"afterKey": []string{after},
 	}
 
-	trailingUri := collection+"?"+queryVariables.Encode()
+	trailingUri := collection + "?" + queryVariables.Encode()
 
 	return c.doList(trailingUri)
 }
@@ -212,7 +212,7 @@ func (c *Client) ListStart(collection string, start string, limit int) (*KVResul
 		"startKey": []string{start},
 	}
 
-	trailingUri := collection+"?"+queryVariables.Encode()
+	trailingUri := collection + "?" + queryVariables.Encode()
 
 	return c.doList(trailingUri)
 }
@@ -258,12 +258,12 @@ func (result *KVResult) Value(value interface{}) error {
 // Returns the trailing URI part for a GET request.
 func (path *Path) trailingGetURI() string {
 	if path.Ref != "" {
-		return path.Collection+"/"+path.Key+"/refs/"+path.Ref
+		return path.Collection + "/" + path.Key + "/refs/" + path.Ref
 	}
-	return path.Collection+"/"+path.Key
+	return path.Collection + "/" + path.Key
 }
 
 // Returns the trailing URI part for a PUT request.
 func (path *Path) trailingPutURI() string {
-	return path.Collection+"/"+path.Key
+	return path.Collection + "/" + path.Key
 }

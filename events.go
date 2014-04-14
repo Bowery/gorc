@@ -25,7 +25,7 @@ type Event struct {
 
 // Get latest events of a particular type from specified collection-key pair.
 func (c *Client) GetEvents(collection string, key string, kind string) (*EventResults, error) {
-	trailingUri := collection+"/"+key+"/events/"+kind
+	trailingUri := collection + "/" + key + "/events/" + kind
 
 	return c.doGetEvents(trailingUri)
 }
@@ -38,7 +38,7 @@ func (c *Client) GetEventsInRange(collection string, key string, kind string, st
 		"end":   []string{strconv.FormatInt(end, 10)},
 	}
 
-	trailingUri := collection+"/"+key+"/events/"+kind+"?"+queryVariables.Encode()
+	trailingUri := collection + "/" + key + "/events/" + kind + "?" + queryVariables.Encode()
 
 	return c.doGetEvents(trailingUri)
 }
@@ -57,7 +57,7 @@ func (c *Client) PutEvent(collection, key, kind string, value interface{}) error
 
 // Put an event of the specified type to provided collection-key pair.
 func (c *Client) PutEventRaw(collection, key, kind string, value io.Reader) error {
-	trailingUri := collection+"/"+key+"/events/"+kind
+	trailingUri := collection + "/" + key + "/events/" + kind
 
 	return c.doPutEvent(trailingUri, value)
 
@@ -81,7 +81,7 @@ func (c *Client) PutEventWithTimeRaw(collection, key, kind string, time int64, v
 		"timestamp": []string{strconv.FormatInt(time, 10)},
 	}
 
-	trailingUri := collection+"/"+key+"/events/"+kind+"?"+queryVariables.Encode()
+	trailingUri := collection + "/" + key + "/events/" + kind + "?" + queryVariables.Encode()
 
 	return c.doPutEvent(trailingUri, value)
 }
