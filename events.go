@@ -45,7 +45,7 @@ func (client *Client) GetEventsInRange(collection string, key string, kind strin
 
 // Put an event of the specified type to provided collection-key pair.
 func (client *Client) PutEvent(collection, key, kind string, value interface{}) error {
-	buf := new(bytes.Buffer)
+	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
 	if err := encoder.Encode(value); err != nil {
@@ -65,7 +65,7 @@ func (client *Client) PutEventRaw(collection, key, kind string, value io.Reader)
 
 // Put an event of the specified type to provided collection-key pair and time.
 func (client *Client) PutEventWithTime(collection, key, kind string, time int64, value interface{}) error {
-	buf := new(bytes.Buffer)
+	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
 	if err := encoder.Encode(value); err != nil {

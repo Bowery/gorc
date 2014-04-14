@@ -59,7 +59,7 @@ func (client *Client) GetPath(path *Path) (*KVResult, error) {
 
 // Store a value to a collection-key pair.
 func (client *Client) Put(collection string, key string, value interface{}) (*Path, error) {
-	buf := new(bytes.Buffer)
+	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
 	if err := encoder.Encode(value); err != nil {
@@ -76,7 +76,7 @@ func (client *Client) PutRaw(collection string, key string, value io.Reader) (*P
 
 // Store a value to a collection-key pair if the path's ref value is the latest.
 func (client *Client) PutIfUnmodified(path *Path, value interface{}) (*Path, error) {
-	buf := new(bytes.Buffer)
+	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
 	if err := encoder.Encode(value); err != nil {
@@ -97,7 +97,7 @@ func (client *Client) PutIfUnmodifiedRaw(path *Path, value io.Reader) (*Path, er
 
 // Store a value to a collection-key pair if it doesn't already hold a value.
 func (client *Client) PutIfAbsent(collection string, key string, value interface{}) (*Path, error) {
-	buf := new(bytes.Buffer)
+	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
 	if err := encoder.Encode(value); err != nil {
@@ -116,6 +116,7 @@ func (client *Client) PutIfAbsentRaw(collection string, key string, value io.Rea
 	return client.doPut(&Path{Collection: collection, Key: key}, headers, value)
 }
 
+// Execute a key/value Put.
 func (client *Client) doPut(path *Path, headers map[string]string, value io.Reader) (*Path, error) {
 	resp, err := client.doRequest("PUT", path.trailingPutURI(), headers, value)
 
