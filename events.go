@@ -25,10 +25,10 @@ type Event struct {
 }
 
 // Get all events of a particular type in specified collection-key pair in a range.
-func (client *Client) GetEvents(collection string, key string, kind string, start uint64, end uint64) (*EventResults, error) {
+func (client *Client) GetEvents(collection string, key string, kind string, start int64, end int64) (*EventResults, error) {
 	queryVariables := url.Values{
-		"start": []string{strconv.FormatUint(start, 10)},
-		"end":   []string{strconv.FormatUint(end, 10)},
+		"start": []string{strconv.FormatInt(start, 10)},
+		"end":   []string{strconv.FormatInt(end, 10)},
 	}
 
 	trailingUri := fmt.Sprintf("%s/%s/events/%s?%s", collection, key, kind, queryVariables.Encode())
