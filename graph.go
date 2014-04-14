@@ -20,11 +20,11 @@ type GraphResult struct {
 }
 
 // Get all related key/value objects by collection-key and a list of relations.
-func (client *Client) GetRelations(collection string, key string, hops []string) (*GraphResults, error) {
+func (c *Client) GetRelations(collection string, key string, hops []string) (*GraphResults, error) {
 	relationsPath := strings.Join(hops, "/")
 
 	trailingUri := collection+"/"+key+"/relations/"+relationsPath
-	resp, err := client.doRequest("GET", trailingUri, nil, nil)
+	resp, err := c.doRequest("GET", trailingUri, nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -46,9 +46,9 @@ func (client *Client) GetRelations(collection string, key string, hops []string)
 }
 
 // Create a relationship of a specified type between two collection-keys.
-func (client *Client) PutRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
+func (c *Client) PutRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
 	trailingUri := sourceCollection+"/"+sourceKey+"/relation/"+kind+"/"+sinkCollection+"/"+sinkKey
-	resp, err := client.doRequest("PUT", trailingUri, nil, nil)
+	resp, err := c.doRequest("PUT", trailingUri, nil, nil)
 
 	if err != nil {
 		return err

@@ -24,15 +24,15 @@ type Event struct {
 }
 
 // Get latest events of a particular type from specified collection-key pair.
-func (client *Client) GetEvents(collection string, key string, kind string) (*EventResults, error) {
+func (c *Client) GetEvents(collection string, key string, kind string) (*EventResults, error) {
 	trailingUri := collection+"/"+key+"/events/"+kind
 
-	return client.doGetEvents(trailingUri)
+	return c.doGetEvents(trailingUri)
 }
 
 // Get all events of a particular type from specified collection-key pair in a
 // range.
-func (client *Client) GetEventsInRange(collection string, key string, kind string, start int64, end int64) (*EventResults, error) {
+func (c *Client) GetEventsInRange(collection string, key string, kind string, start int64, end int64) (*EventResults, error) {
 	queryVariables := url.Values{
 		"start": []string{strconv.FormatInt(start, 10)},
 		"end":   []string{strconv.FormatInt(end, 10)},
@@ -40,11 +40,11 @@ func (client *Client) GetEventsInRange(collection string, key string, kind strin
 
 	trailingUri := collection+"/"+key+"/events/"+kind+"?"+queryVariables.Encode()
 
-	return client.doGetEvents(trailingUri)
+	return c.doGetEvents(trailingUri)
 }
 
 // Put an event of the specified type to provided collection-key pair.
-func (client *Client) PutEvent(collection, key, kind string, value interface{}) error {
+func (c *Client) PutEvent(collection, key, kind string, value interface{}) error {
 	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
@@ -52,19 +52,19 @@ func (client *Client) PutEvent(collection, key, kind string, value interface{}) 
 		return err
 	}
 
-	return client.PutEventRaw(collection, key, kind, buf)
+	return c.PutEventRaw(collection, key, kind, buf)
 }
 
 // Put an event of the specified type to provided collection-key pair.
-func (client *Client) PutEventRaw(collection, key, kind string, value io.Reader) error {
+func (c *Client) PutEventRaw(collection, key, kind string, value io.Reader) error {
 	trailingUri := collection+"/"+key+"/events/"+kind
 
-	return client.doPutEvent(trailingUri, value)
+	return c.doPutEvent(trailingUri, value)
 
 }
 
 // Put an event of the specified type to provided collection-key pair and time.
-func (client *Client) PutEventWithTime(collection, key, kind string, time int64, value interface{}) error {
+func (c *Client) PutEventWithTime(collection, key, kind string, time int64, value interface{}) error {
 	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
@@ -72,23 +72,23 @@ func (client *Client) PutEventWithTime(collection, key, kind string, time int64,
 		return err
 	}
 
-	return client.PutEventWithTimeRaw(collection, key, kind, time, buf)
+	return c.PutEventWithTimeRaw(collection, key, kind, time, buf)
 }
 
 // Put an event of the specified type to provided collection-key pair and time.
-func (client *Client) PutEventWithTimeRaw(collection, key, kind string, time int64, value io.Reader) error {
+func (c *Client) PutEventWithTimeRaw(collection, key, kind string, time int64, value io.Reader) error {
 	queryVariables := url.Values{
 		"timestamp": []string{strconv.FormatInt(time, 10)},
 	}
 
 	trailingUri := collection+"/"+key+"/events/"+kind+"?"+queryVariables.Encode()
 
-	return client.doPutEvent(trailingUri, value)
+	return c.doPutEvent(trailingUri, value)
 }
 
 // Execute event get.
-func (client *Client) doGetEvents(trailingUri string) (*EventResults, error) {
-	resp, err := client.doRequest("GET", trailingUri, nil, nil)
+func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
+	resp, err := c.doRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +111,8 @@ func (client *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 }
 
 // Execute event put.
-func (client *Client) doPutEvent(trailingUri string, value io.Reader) error {
-	resp, err := client.doRequest("PUT", trailingUri, nil, value)
+func (c *Client) doPutEvent(trailingUri string, value io.Reader) error {
+	resp, err := c.doRequest("PUT", trailingUri, nil, value)
 	if err != nil {
 		return err
 	}

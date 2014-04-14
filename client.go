@@ -82,14 +82,14 @@ func (e OrchestrateError) Error() string {
 	return fmt.Sprintf(`%s (%d): %s`, e.Status, e.StatusCode, e.Message)
 }
 
-// Executes an HTTP request with the given client object.
-func (client *Client) doRequest(method, trailing string, headers map[string]string, body io.Reader) (*http.Response, error) {
+// Executes an HTTP request with the given c object.
+func (c *Client) doRequest(method, trailing string, headers map[string]string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, rootUri+trailing, body)
 	if err != nil {
 		return nil, err
 	}
 
-	req.SetBasicAuth(client.authToken, "")
+	req.SetBasicAuth(c.authToken, "")
 
 	for k, v := range headers {
 		req.Header.Add(k, v)
@@ -99,5 +99,5 @@ func (client *Client) doRequest(method, trailing string, headers map[string]stri
 		req.Header.Add("Content-Type", "application/json")
 	}
 
-	return client.httpClient.Do(req)
+	return c.httpClient.Do(req)
 }

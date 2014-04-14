@@ -25,13 +25,13 @@ type KVResult struct {
 }
 
 // Get a collection-key pair's value.
-func (client *Client) Get(collection, key string) (*KVResult, error) {
-	return client.GetPath(&Path{Collection: collection, Key: key})
+func (c *Client) Get(collection, key string) (*KVResult, error) {
+	return c.GetPath(&Path{Collection: collection, Key: key})
 }
 
 // Get the value at a path.
-func (client *Client) GetPath(path *Path) (*KVResult, error) {
-	resp, err := client.doRequest("GET", path.trailingGetURI(), nil, nil)
+func (c *Client) GetPath(path *Path) (*KVResult, error) {
+	resp, err := c.doRequest("GET", path.trailingGetURI(), nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (client *Client) GetPath(path *Path) (*KVResult, error) {
 }
 
 // Store a value to a collection-key pair.
-func (client *Client) Put(collection string, key string, value interface{}) (*Path, error) {
+func (c *Client) Put(collection string, key string, value interface{}) (*Path, error) {
 	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
@@ -66,16 +66,16 @@ func (client *Client) Put(collection string, key string, value interface{}) (*Pa
 		return nil, err
 	}
 
-	return client.PutRaw(collection, key, buf)
+	return c.PutRaw(collection, key, buf)
 }
 
 // Store a value to a collection-key pair.
-func (client *Client) PutRaw(collection string, key string, value io.Reader) (*Path, error) {
-	return client.doPut(&Path{Collection: collection, Key: key}, nil, value)
+func (c *Client) PutRaw(collection string, key string, value io.Reader) (*Path, error) {
+	return c.doPut(&Path{Collection: collection, Key: key}, nil, value)
 }
 
 // Store a value to a collection-key pair if the path's ref value is the latest.
-func (client *Client) PutIfUnmodified(path *Path, value interface{}) (*Path, error) {
+func (c *Client) PutIfUnmodified(path *Path, value interface{}) (*Path, error) {
 	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
@@ -83,20 +83,20 @@ func (client *Client) PutIfUnmodified(path *Path, value interface{}) (*Path, err
 		return nil, err
 	}
 
-	return client.PutIfUnmodifiedRaw(path, buf)
+	return c.PutIfUnmodifiedRaw(path, buf)
 }
 
 // Store a value to a collection-key pair if the path's ref value is the latest.
-func (client *Client) PutIfUnmodifiedRaw(path *Path, value io.Reader) (*Path, error) {
+func (c *Client) PutIfUnmodifiedRaw(path *Path, value io.Reader) (*Path, error) {
 	headers := map[string]string{
 		"If-Match": "\""+path.Ref+"\"",
 	}
 
-	return client.doPut(path, headers, value)
+	return c.doPut(path, headers, value)
 }
 
 // Store a value to a collection-key pair if it doesn't already hold a value.
-func (client *Client) PutIfAbsent(collection string, key string, value interface{}) (*Path, error) {
+func (c *Client) PutIfAbsent(collection string, key string, value interface{}) (*Path, error) {
 	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
 
@@ -104,21 +104,21 @@ func (client *Client) PutIfAbsent(collection string, key string, value interface
 		return nil, err
 	}
 
-	return client.PutIfAbsentRaw(collection, key, buf)
+	return c.PutIfAbsentRaw(collection, key, buf)
 }
 
 // Store a value to a collection-key pair if it doesn't already hold a value.
-func (client *Client) PutIfAbsentRaw(collection string, key string, value io.Reader) (*Path, error) {
+func (c *Client) PutIfAbsentRaw(collection string, key string, value io.Reader) (*Path, error) {
 	headers := map[string]string{
 		"If-None-Match": "\"*\"",
 	}
 
-	return client.doPut(&Path{Collection: collection, Key: key}, headers, value)
+	return c.doPut(&Path{Collection: collection, Key: key}, headers, value)
 }
 
 // Execute a key/value Put.
-func (client *Client) doPut(path *Path, headers map[string]string, value io.Reader) (*Path, error) {
-	resp, err := client.doRequest("PUT", path.trailingPutURI(), headers, value)
+func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (*Path, error) {
+	resp, err := c.doRequest("PUT", path.trailingPutURI(), headers, value)
 
 	if err != nil {
 		return nil, err
@@ -140,33 +140,33 @@ func (client *Client) doPut(path *Path, headers map[string]string, value io.Read
 }
 
 // Delete the value held at a collection-key pair.
-func (client *Client) Delete(collection, key string) error {
-	return client.doDelete(collection+"/"+key, nil)
+func (c *Client) Delete(collection, key string) error {
+	return c.doDelete(collection+"/"+key, nil)
 }
 
 // Delete the value held at a collection-key par if the path's ref value is the
 // latest.
-func (client *Client) DeleteIfUnmodified(path *Path) error {
+func (c *Client) DeleteIfUnmodified(path *Path) error {
 	headers := map[string]string{
 		"If-Match": "\""+path.Ref+"\"",
 	}
 
-	return client.doDelete(path.trailingPutURI(), headers)
+	return c.doDelete(path.trailingPutURI(), headers)
 }
 
 // Delete the current and all previous values from a collection-key pair.
-func (client *Client) Purge(collection, key string) error {
-	return client.doDelete(collection+"/"+key+"?purge=true", nil)
+func (c *Client) Purge(collection, key string) error {
+	return c.doDelete(collection+"/"+key+"?purge=true", nil)
 }
 
 // Delete a collection.
-func (client *Client) DeleteCollection(collection string) error {
-	return client.doDelete(collection+"?force=true", nil)
+func (c *Client) DeleteCollection(collection string) error {
+	return c.doDelete(collection+"?force=true", nil)
 }
 
 // Execute delete
-func (client *Client) doDelete(trailingUri string, headers map[string]string) error {
-	resp, err := client.doRequest("DELETE", trailingUri, headers, nil)
+func (c *Client) doDelete(trailingUri string, headers map[string]string) error {
+	resp, err := c.doRequest("DELETE", trailingUri, headers, nil)
 	if err != nil {
 		return err
 	}
@@ -181,19 +181,19 @@ func (client *Client) doDelete(trailingUri string, headers map[string]string) er
 }
 
 // List the values in a collection in key order with the specified page size.
-func (client *Client) List(collection string, limit int) (*KVResults, error) {
+func (c *Client) List(collection string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
 		"limit": []string{strconv.Itoa(limit)},
 	}
 
 	trailingUri := collection+"?"+queryVariables.Encode()
 
-	return client.doList(trailingUri)
+	return c.doList(trailingUri)
 }
 
 // List the values in a collection in key order with the specified page size
 // that come after the specified key.
-func (client *Client) ListAfter(collection string, after string, limit int) (*KVResults, error) {
+func (c *Client) ListAfter(collection string, after string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
 		"limit":    []string{strconv.Itoa(limit)},
 		"afterKey": []string{after},
@@ -201,12 +201,12 @@ func (client *Client) ListAfter(collection string, after string, limit int) (*KV
 
 	trailingUri := collection+"?"+queryVariables.Encode()
 
-	return client.doList(trailingUri)
+	return c.doList(trailingUri)
 }
 
 // List the values in a collection in key order with the specified page size
 // starting with the specified key.
-func (client *Client) ListStart(collection string, start string, limit int) (*KVResults, error) {
+func (c *Client) ListStart(collection string, start string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
 		"limit":    []string{strconv.Itoa(limit)},
 		"startKey": []string{start},
@@ -214,17 +214,17 @@ func (client *Client) ListStart(collection string, start string, limit int) (*KV
 
 	trailingUri := collection+"?"+queryVariables.Encode()
 
-	return client.doList(trailingUri)
+	return c.doList(trailingUri)
 }
 
 // Get the page of key/value list results that follow that provided set.
-func (client *Client) ListGetNext(results *KVResults) (*KVResults, error) {
-	return client.doList(results.Next[4:])
+func (c *Client) ListGetNext(results *KVResults) (*KVResults, error) {
+	return c.doList(results.Next[4:])
 }
 
 // Execute a key/value list operation.
-func (client *Client) doList(trailingUri string) (*KVResults, error) {
-	resp, err := client.doRequest("GET", trailingUri, nil, nil)
+func (c *Client) doList(trailingUri string) (*KVResults, error) {
+	resp, err := c.doRequest("GET", trailingUri, nil, nil)
 
 	if err != nil {
 		return nil, err

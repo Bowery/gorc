@@ -27,7 +27,7 @@ type SearchResult struct {
 // Search a collection with a Lucene Query Parser Syntax Query
 // (http://lucene.apache.org/core/4_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Overview)
 // and with a specified size limit and offset.
-func (client *Client) Search(collection string, query string, limit int, offset int) (*SearchResults, error) {
+func (c *Client) Search(collection string, query string, limit int, offset int) (*SearchResults, error) {
 	queryVariables := url.Values{
 		"query":  []string{query},
 		"limit":  []string{strconv.Itoa(limit)},
@@ -36,22 +36,22 @@ func (client *Client) Search(collection string, query string, limit int, offset 
 
 	trailingUri := collection+"?"+queryVariables.Encode()
 
-	return client.doSearch(trailingUri)
+	return c.doSearch(trailingUri)
 }
 
 // Get the page of search results that follow that provided set.
-func (client *Client) SearchGetNext(results *SearchResults) (*SearchResults, error) {
-	return client.doSearch(results.Next[4:])
+func (c *Client) SearchGetNext(results *SearchResults) (*SearchResults, error) {
+	return c.doSearch(results.Next[4:])
 }
 
 // Get the page of search results that precede that provided set.
-func (client *Client) SearchGetPrev(results *SearchResults) (*SearchResults, error) {
-	return client.doSearch(results.Prev[4:])
+func (c *Client) SearchGetPrev(results *SearchResults) (*SearchResults, error) {
+	return c.doSearch(results.Prev[4:])
 }
 
 // Execute a search request.
-func (client *Client) doSearch(trailingUri string) (*SearchResults, error) {
-	resp, err := client.doRequest("GET", trailingUri, nil, nil)
+func (c *Client) doSearch(trailingUri string) (*SearchResults, error) {
+	resp, err := c.doRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
