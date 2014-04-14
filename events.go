@@ -24,8 +24,16 @@ type Event struct {
 	RawValue  json.RawMessage `json:"value"`
 }
 
-// Get all events of a particular type in specified collection-key pair in a range.
-func (client *Client) GetEvents(collection string, key string, kind string, start int64, end int64) (*EventResults, error) {
+// Get latest events of a particular type from specified collection-key pair.
+func (client *Client) GetEvents(collection string, key string, kind string) (*EventResults, error) {
+	trailingUri := fmt.Sprintf("%s/%s/events/%s", collection, key, kind)
+
+	return client.doGetEvents(trailingUri)
+}
+
+// Get all events of a particular type from specified collection-key pair in a
+// range.
+func (client *Client) GetEventsInRange(collection string, key string, kind string, start int64, end int64) (*EventResults, error) {
 	queryVariables := url.Values{
 		"start": []string{strconv.FormatInt(start, 10)},
 		"end":   []string{strconv.FormatInt(end, 10)},
@@ -33,6 +41,54 @@ func (client *Client) GetEvents(collection string, key string, kind string, star
 
 	trailingUri := fmt.Sprintf("%s/%s/events/%s?%s", collection, key, kind, queryVariables.Encode())
 
+	return client.doGetEvents(trailingUri)
+}
+
+// Put an event of the specified type to provided collection-key pair.
+func (client *Client) PutEvent(collection, key, kind string, value interface{}) error {
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+
+	if err := encoder.Encode(value); err != nil {
+		return err
+	}
+
+	return client.PutEventRaw(collection, key, kind, buf)
+}
+
+// Put an event of the specified type to provided collection-key pair.
+func (client *Client) PutEventRaw(collection, key, kind string, value io.Reader) error {
+	trailingUri := fmt.Sprintf("%v/%v/events/%v", collection, key, kind)
+
+	return client.doPutEvent(trailingUri, value)
+
+}
+
+// Put an event of the specified type to provided collection-key pair and time.
+func (client *Client) PutEventWithTime(collection, key, kind string, time int64, value interface{}) error {
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+
+	if err := encoder.Encode(value); err != nil {
+		return err
+	}
+
+	return client.PutEventWithTimeRaw(collection, key, kind, time, buf)
+}
+
+// Put an event of the specified type to provided collection-key pair and time.
+func (client *Client) PutEventWithTimeRaw(collection, key, kind string, time int64, value io.Reader) error {
+	queryVariables := url.Values{
+		"timestamp": []string{strconv.FormatInt(time, 10)},
+	}
+
+	trailingUri := fmt.Sprintf("%v/%v/events/%v?%v", collection, key, kind, queryVariables.Encode())
+
+	return client.doPutEvent(trailingUri, value)
+}
+
+// Execute event get.
+func (client *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 	resp, err := client.doRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
@@ -55,21 +111,9 @@ func (client *Client) GetEvents(collection string, key string, kind string, star
 	return results, err
 }
 
-// Put an event of the specified type to provided collection-key pair.
-func (client *Client) PutEvent(collection, key, kind string, value interface{}) error {
-	buf := new(bytes.Buffer)
-	encoder := json.NewEncoder(buf)
-
-	if err := encoder.Encode(value); err != nil {
-		return err
-	}
-
-	return client.PutEventRaw(collection, key, kind, buf)
-}
-
-// Put an event of the specified type to provided collection-key pair.
-func (client *Client) PutEventRaw(collection, key, kind string, value io.Reader) error {
-	resp, err := client.doRequest("PUT", collection+"/"+key+"/events/"+kind, nil, value)
+// Execute event put.
+func (client *Client) doPutEvent(trailingUri string, value io.Reader) error {
+	resp, err := client.doRequest("PUT", trailingUri, nil, value)
 	if err != nil {
 		return err
 	}
