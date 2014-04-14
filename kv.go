@@ -187,6 +187,27 @@ func (client *Client) Delete(collection, key string) error {
 	return nil
 }
 
+// Delete the value held at a collection-key par if the path's ref value is the
+// latest.
+func (client *Client) DeleteIfUnmodified(path *Path) error {
+	headers := map[string]string{
+		"If-Match": fmt.Sprintf("\"%s\"", path.Ref),
+	}
+
+	resp, err := client.doRequest("DELETE", path.trailingPutURI(), headers, nil)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 204 {
+		return newError(resp)
+	}
+
+	return nil
+}
+
 // Delete the current and all previous values from a collection-key pair.
 func (client *Client) Purge(collection, key string) error {
 	resp, err := client.doRequest("DELETE", collection+"/"+key+"?purge=true", nil, nil)
