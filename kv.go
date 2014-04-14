@@ -224,6 +224,22 @@ func (client *Client) Purge(collection, key string) error {
 	return nil
 }
 
+// Delete a collection.
+func (client *Client) DeleteCollection(collection string) error {
+	resp, err := client.doRequest("DELETE", collection+"?force=true", nil, nil)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 204 {
+		return newError(resp)
+	}
+
+	return nil
+}
+
 // List the values in a collection in key order with the specified page size.
 func (client *Client) List(collection string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
