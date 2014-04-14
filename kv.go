@@ -270,7 +270,7 @@ func (result *KVResult) Value(value interface{}) error {
 // Returns the trailing URI part for a GET request.
 func (path *Path) trailingGetURI() string {
 	if path.Ref != "" {
-		return fmt.Sprintf("%s/%s/ref/$s", path.Collection, path.Key, path.Ref)
+		return fmt.Sprintf("%s/%s/ref/%s", path.Collection, path.Key, path.Ref)
 	}
 	return fmt.Sprintf("%s/%s", path.Collection, path.Key)
 }
