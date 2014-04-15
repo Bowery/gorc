@@ -40,6 +40,11 @@ Usage examples
         result.Value(&values[i])
     }
 
+    // Get next page of results
+    if results.HasNext() {
+        results, err := c.SearchGetNext(results)
+    }
+
     // Get Events
     events, _ := c.GetEvents("collection", "key", "kind")
 
