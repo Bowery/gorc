@@ -27,7 +27,7 @@ type SearchResult struct {
 // Search a collection with a Lucene Query Parser Syntax Query
 // (http://lucene.apache.org/core/4_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Overview)
 // and with a specified size limit and offset.
-func (c *Client) Search(collection string, query string, limit int, offset int) (*SearchResults, error) {
+func (c *Client) Search(collection, query string, limit, offset int) (*SearchResults, error) {
 	queryVariables := url.Values{
 		"query":  []string{query},
 		"limit":  []string{strconv.Itoa(limit)},

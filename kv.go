@@ -32,7 +32,6 @@ func (c *Client) Get(collection, key string) (*KVResult, error) {
 // Get the value at a path.
 func (c *Client) GetPath(path *Path) (*KVResult, error) {
 	resp, err := c.doRequest("GET", path.trailingGetURI(), nil, nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -59,14 +58,11 @@ func (c *Client) GetPath(path *Path) (*KVResult, error) {
 
 // Store a value to a collection-key pair.
 func (c *Client) Put(collection string, key string, value interface{}) (*Path, error) {
-	buf := bytes.NewBuffer(nil)
-	encoder := json.NewEncoder(buf)
+	reader, writer := io.Pipe()
+	encoder := json.NewEncoder(writer)
 
-	if err := encoder.Encode(value); err != nil {
-		return nil, err
-	}
-
-	return c.PutRaw(collection, key, buf)
+	go func() { writer.CloseWithError(encoder.Encode(value)) }()
+	return c.PutRaw(collection, key, reader)
 }
 
 // Store a value to a collection-key pair.
@@ -76,39 +72,33 @@ func (c *Client) PutRaw(collection string, key string, value io.Reader) (*Path, 
 
 // Store a value to a collection-key pair if the path's ref value is the latest.
 func (c *Client) PutIfUnmodified(path *Path, value interface{}) (*Path, error) {
-	buf := bytes.NewBuffer(nil)
-	encoder := json.NewEncoder(buf)
+	reader, writer := io.Pipe()
+	encoder := json.NewEncoder(writer)
 
-	if err := encoder.Encode(value); err != nil {
-		return nil, err
-	}
-
-	return c.PutIfUnmodifiedRaw(path, buf)
+	go func() { writer.CloseWithError(encoder.Encode(value)) }()
+	return c.PutIfUnmodifiedRaw(path, reader)
 }
 
 // Store a value to a collection-key pair if the path's ref value is the latest.
 func (c *Client) PutIfUnmodifiedRaw(path *Path, value io.Reader) (*Path, error) {
 	headers := map[string]string{
-		"If-Match": "\"" + path.Ref + "\"",
+		"If-Match": `"` + path.Ref + `"`,
 	}
 
 	return c.doPut(path, headers, value)
 }
 
 // Store a value to a collection-key pair if it doesn't already hold a value.
-func (c *Client) PutIfAbsent(collection string, key string, value interface{}) (*Path, error) {
-	buf := bytes.NewBuffer(nil)
-	encoder := json.NewEncoder(buf)
+func (c *Client) PutIfAbsent(collection, key string, value interface{}) (*Path, error) {
+	reader, writer := io.Pipe()
+	encoder := json.NewEncoder(writer)
 
-	if err := encoder.Encode(value); err != nil {
-		return nil, err
-	}
-
-	return c.PutIfAbsentRaw(collection, key, buf)
+	go func() { writer.CloseWithError(encoder.Encode(value)) }()
+	return c.PutIfAbsentRaw(collection, key, reader)
 }
 
 // Store a value to a collection-key pair if it doesn't already hold a value.
-func (c *Client) PutIfAbsentRaw(collection string, key string, value io.Reader) (*Path, error) {
+func (c *Client) PutIfAbsentRaw(collection, key string, value io.Reader) (*Path, error) {
 	headers := map[string]string{
 		"If-None-Match": "\"*\"",
 	}
@@ -119,7 +109,6 @@ func (c *Client) PutIfAbsentRaw(collection string, key string, value io.Reader) 
 // Execute a key/value Put.
 func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (*Path, error) {
 	resp, err := c.doRequest("PUT", path.trailingPutURI(), headers, value)
-
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +137,7 @@ func (c *Client) Delete(collection, key string) error {
 // latest.
 func (c *Client) DeleteIfUnmodified(path *Path) error {
 	headers := map[string]string{
-		"If-Match": "\"" + path.Ref + "\"",
+		"If-Match": `"` + path.Ref + `"`,
 	}
 
 	return c.doDelete(path.trailingPutURI(), headers)
@@ -194,7 +183,7 @@ func (c *Client) List(collection string, limit int) (*KVResults, error) {
 
 // List the values in a collection in key order with the specified page size
 // that come after the specified key.
-func (c *Client) ListAfter(collection string, after string, limit int) (*KVResults, error) {
+func (c *Client) ListAfter(collection, after string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
 		"limit":    []string{strconv.Itoa(limit)},
 		"afterKey": []string{after},
@@ -207,7 +196,7 @@ func (c *Client) ListAfter(collection string, after string, limit int) (*KVResul
 
 // List the values in a collection in key order with the specified page size
 // starting with the specified key.
-func (c *Client) ListStart(collection string, start string, limit int) (*KVResults, error) {
+func (c *Client) ListStart(collection, start string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
 		"limit":    []string{strconv.Itoa(limit)},
 		"startKey": []string{start},
@@ -226,7 +215,6 @@ func (c *Client) ListGetNext(results *KVResults) (*KVResults, error) {
 // Execute a key/value list operation.
 func (c *Client) doList(trailingUri string) (*KVResults, error) {
 	resp, err := c.doRequest("GET", trailingUri, nil, nil)
-
 	if err != nil {
 		return nil, err
 	}
