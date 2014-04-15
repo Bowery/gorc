@@ -63,6 +63,24 @@ func (c *Client) PutRelation(sourceCollection string, sourceKey string, kind str
 	return nil
 }
 
+// Create a relationship of a specified type between two collection-keys.
+func (c *Client) DeleteRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
+	trailingUri := sourceCollection + "/" + sourceKey + "/relation/" + kind + "/" + sinkCollection + "/" + sinkKey + "?purge=true"
+	resp, err := c.doRequest("DELETE", trailingUri, nil, nil)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 204 {
+		return newError(resp)
+	}
+
+	return nil
+}
+
 // Marshall the value of a GraphResult into the provided object.
 func (r *GraphResult) Value(value interface{}) error {
 	return json.Unmarshal(r.RawValue, value)
