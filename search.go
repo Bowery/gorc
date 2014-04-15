@@ -52,6 +52,7 @@ func (c *Client) SearchGetPrev(results *SearchResults) (*SearchResults, error) {
 // Execute a search request.
 func (c *Client) doSearch(trailingUri string) (*SearchResults, error) {
 	resp, err := c.doRequest("GET", trailingUri, nil, nil)
+
 	if err != nil {
 		return nil, err
 	}

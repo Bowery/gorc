@@ -59,6 +59,7 @@ func (c *Client) PutRelation(sourceCollection string, sourceKey string, kind str
 	if resp.StatusCode != 204 {
 		return newError(resp)
 	}
+
 	return nil
 }
 

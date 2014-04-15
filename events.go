@@ -47,7 +47,6 @@ func (c *Client) GetEventsInRange(collection string, key string, kind string, st
 func (c *Client) PutEvent(collection, key, kind string, value interface{}) error {
 	buf := bytes.NewBuffer(nil)
 	encoder := json.NewEncoder(buf)
-
 	if err := encoder.Encode(value); err != nil {
 		return err
 	}
@@ -89,6 +88,7 @@ func (c *Client) PutEventWithTimeRaw(collection, key, kind string, time int64, v
 // Execute event get.
 func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 	resp, err := c.doRequest("GET", trailingUri, nil, nil)
+
 	if err != nil {
 		return nil, err
 	}
@@ -101,9 +101,7 @@ func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 
 	decoder := json.NewDecoder(resp.Body)
 	results := new(EventResults)
-	err = decoder.Decode(results)
-
-	if err != nil {
+	if err = decoder.Decode(results); err != nil {
 		return nil, err
 	}
 
