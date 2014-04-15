@@ -167,6 +167,7 @@ func (c *Client) DeleteCollection(collection string) error {
 // Execute delete
 func (c *Client) doDelete(trailingUri string, headers map[string]string) error {
 	resp, err := c.doRequest("DELETE", trailingUri, headers, nil)
+
 	if err != nil {
 		return err
 	}
@@ -246,24 +247,24 @@ func (c *Client) doList(trailingUri string) (*KVResults, error) {
 }
 
 // Check if there is a subsequent page of key/value list results.
-func (results *KVResults) HasNext() bool {
-	return results.Next != ""
+func (r *KVResults) HasNext() bool {
+	return r.Next != ""
 }
 
 // Marshall the value of a KVResult into the provided object.
-func (result *KVResult) Value(value interface{}) error {
-	return json.Unmarshal(result.RawValue, value)
+func (r *KVResult) Value(value interface{}) error {
+	return json.Unmarshal(r.RawValue, value)
 }
 
 // Returns the trailing URI part for a GET request.
-func (path *Path) trailingGetURI() string {
-	if path.Ref != "" {
-		return path.Collection + "/" + path.Key + "/refs/" + path.Ref
+func (p *Path) trailingGetURI() string {
+	if p.Ref != "" {
+		return p.Collection + "/" + p.Key + "/refs/" + p.Ref
 	}
-	return path.Collection + "/" + path.Key
+	return p.Collection + "/" + p.Key
 }
 
 // Returns the trailing URI part for a PUT request.
-func (path *Path) trailingPutURI() string {
-	return path.Collection + "/" + path.Key
+func (p *Path) trailingPutURI() string {
+	return p.Collection + "/" + p.Key
 }

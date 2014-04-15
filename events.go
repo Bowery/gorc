@@ -126,6 +126,6 @@ func (c *Client) doPutEvent(trailingUri string, value io.Reader) error {
 }
 
 // Marshall the value of an event into the provided object.
-func (result *Event) Value(value interface{}) error {
-	return json.Unmarshal(result.RawValue, value)
+func (r *Event) Value(value interface{}) error {
+	return json.Unmarshal(r.RawValue, value)
 }

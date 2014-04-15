@@ -72,16 +72,16 @@ func (c *Client) doSearch(trailingUri string) (*SearchResults, error) {
 }
 
 // Check if there is a subsequent page of search results.
-func (results *SearchResults) HasNext() bool {
-	return results.Next != ""
+func (r *SearchResults) HasNext() bool {
+	return r.Next != ""
 }
 
 // Check if there is a previous page of search results.
-func (results *SearchResults) HasPrev() bool {
-	return results.Prev != ""
+func (r *SearchResults) HasPrev() bool {
+	return r.Prev != ""
 }
 
 // Marshall the value of a SearchResult into the provided object.
-func (result *SearchResult) Value(value interface{}) error {
-	return json.Unmarshal(result.RawValue, value)
+func (r *SearchResult) Value(value interface{}) error {
+	return json.Unmarshal(r.RawValue, value)
 }

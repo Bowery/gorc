@@ -63,6 +63,6 @@ func (c *Client) PutRelation(sourceCollection string, sourceKey string, kind str
 }
 
 // Marshall the value of a GraphResult into the provided object.
-func (result *GraphResult) Value(value interface{}) error {
-	return json.Unmarshal(result.RawValue, value)
+func (r *GraphResult) Value(value interface{}) error {
+	return json.Unmarshal(r.RawValue, value)
 }
