@@ -3,7 +3,6 @@
 package client
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net/url"
@@ -24,7 +23,7 @@ type Event struct {
 }
 
 // Get latest events of a particular type from specified collection-key pair.
-func (c *Client) GetEvents(collection string, key string, kind string) (*EventResults, error) {
+func (c *Client) GetEvents(collection, key, kind string) (*EventResults, error) {
 	trailingUri := collection + "/" + key + "/events/" + kind
 
 	return c.doGetEvents(trailingUri)
@@ -32,7 +31,7 @@ func (c *Client) GetEvents(collection string, key string, kind string) (*EventRe
 
 // Get all events of a particular type from specified collection-key pair in a
 // range.
-func (c *Client) GetEventsInRange(collection string, key string, kind string, start int64, end int64) (*EventResults, error) {
+func (c *Client) GetEventsInRange(collection, key, kind string, start int64, end int64) (*EventResults, error) {
 	queryVariables := url.Values{
 		"start": []string{strconv.FormatInt(start, 10)},
 		"end":   []string{strconv.FormatInt(end, 10)},
@@ -45,14 +44,11 @@ func (c *Client) GetEventsInRange(collection string, key string, kind string, st
 
 // Put an event of the specified type to provided collection-key pair.
 func (c *Client) PutEvent(collection, key, kind string, value interface{}) error {
-	buf := bytes.NewBuffer(nil)
-	encoder := json.NewEncoder(buf)
+	reader, writer := io.Pipe()
+	encoder := json.NewEncoder(writer)
 
-	if err := encoder.Encode(value); err != nil {
-		return err
-	}
-
-	return c.PutEventRaw(collection, key, kind, buf)
+	go func() { writer.CloseWithError(encoder.Encode(value)) }()
+	return c.PutEventRaw(collection, key, kind, reader)
 }
 
 // Put an event of the specified type to provided collection-key pair.
@@ -65,14 +61,11 @@ func (c *Client) PutEventRaw(collection, key, kind string, value io.Reader) erro
 
 // Put an event of the specified type to provided collection-key pair and time.
 func (c *Client) PutEventWithTime(collection, key, kind string, time int64, value interface{}) error {
-	buf := bytes.NewBuffer(nil)
-	encoder := json.NewEncoder(buf)
+	reader, writer := io.Pipe()
+	encoder := json.NewEncoder(writer)
 
-	if err := encoder.Encode(value); err != nil {
-		return err
-	}
-
-	return c.PutEventWithTimeRaw(collection, key, kind, time, buf)
+	go func() { writer.CloseWithError(encoder.Encode(value)) }()
+	return c.PutEventWithTimeRaw(collection, key, kind, time, reader)
 }
 
 // Put an event of the specified type to provided collection-key pair and time.
@@ -101,9 +94,7 @@ func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 
 	decoder := json.NewDecoder(resp.Body)
 	results := new(EventResults)
-	err = decoder.Decode(results)
-
-	if err != nil {
+	if err = decoder.Decode(results); err != nil {
 		return nil, err
 	}
 
