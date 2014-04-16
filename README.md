@@ -11,7 +11,11 @@ Go Style Documentation:
 Usage examples
 
 ```go
-    c := client.NewClient("Your API Key")
+    // Import the client
+    import "github.com/orchestrate-io/gorc"
+
+    // Create a client
+    c := gorc.NewClient("Your API Key")
 
     // Get a value
     result, _ := c.Get("collection", "key")

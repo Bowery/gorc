@@ -1,6 +1,6 @@
 // Copyright 2014, Orchestrate.IO, Inc.
 
-package client
+package gorc
 
 import (
 	"testing"
