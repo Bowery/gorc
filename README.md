@@ -1,5 +1,5 @@
-orchestrate-go-client
-=====================
+gorc
+====
 
 A golang client for Orchestrate.io
 
