@@ -6,12 +6,16 @@ A golang client for Orchestrate.io
 Supports go 1.1 or later
 
 Go Style Documentation:
-[http://godoc.org/github.com/orchestrate-io/orchestrate-go-client](http://godoc.org/github.com/orchestrate-io/orchestrate-go-client)]
+[http://godoc.org/github.com/orchestrate-io/gorc](http://godoc.org/github.com/orchestrate-io/gorc)]
 
 Usage examples
 
 ```go
-    c := client.NewClient("Your API Key")
+    // Import the client
+    import "github.com/orchestrate-io/gorc"
+
+    // Create a client
+    c := gorc.NewClient("Your API Key")
 
     // Get a value
     result, _ := c.Get("collection", "key")

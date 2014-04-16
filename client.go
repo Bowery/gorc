@@ -8,7 +8,7 @@
 //
 // You can sign up for an Orchestrate account here:
 // http://dashboard.orchestrate.io
-package client
+package gorc
 
 import (
 	"encoding/json"
