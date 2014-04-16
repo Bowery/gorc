@@ -4,27 +4,27 @@ package client
 
 import (
 	"encoding/json"
-	"net/url"
+	"strings"
 )
 
+// Holds results returned from a Graph query.
 type GraphResults struct {
 	Count   uint64        `json:"count"`
 	Results []GraphResult `json:"results"`
 }
 
+// An individual graph result.
 type GraphResult struct {
-	Collection string                 `json:"collection"`
-	Key        string                 `json:"key"`
-	Ref        string                 `json:"ref"`
-	Value      map[string]interface{} `json:"value"`
+	Path     Path            `json:"path"`
+	RawValue json.RawMessage `json:"value"`
 }
 
-func (client *Client) GetRelations(collection, key string, hops []string) (*GraphResults, error) {
-	queryVariables := url.Values{
-		"hop": hops,
-	}
+// Get all related key/value objects by collection-key and a list of relations.
+func (c *Client) GetRelations(collection, key string, hops []string) (*GraphResults, error) {
+	relationsPath := strings.Join(hops, "/")
 
-	resp, err := client.doRequest("GET", collection+"/"+key+"/relations?"+queryVariables.Encode(), nil)
+	trailingUri := collection + "/" + key + "/relations/" + relationsPath
+	resp, err := c.doRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +44,10 @@ func (client *Client) GetRelations(collection, key string, hops []string) (*Grap
 	return result, nil
 }
 
-func (client *Client) PutRelation(sourceCollection, sourceKey, kind, sinkCollection, sinkKey string) error {
-	resp, err := client.doRequest("PUT", sourceCollection+"/"+sourceKey+"/relations/"+kind+"/"+sinkCollection+"/"+sinkKey, nil)
+// Create a relationship of a specified type between two collection-keys.
+func (c *Client) PutRelation(sourceCollection, sourceKey, kind, sinkCollection, sinkKey string) error {
+	trailingUri := sourceCollection + "/" + sourceKey + "/relation/" + kind + "/" + sinkCollection + "/" + sinkKey
+	resp, err := c.doRequest("PUT", trailingUri, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -55,5 +57,29 @@ func (client *Client) PutRelation(sourceCollection, sourceKey, kind, sinkCollect
 	if resp.StatusCode != 204 {
 		return newError(resp)
 	}
+
 	return nil
+}
+
+// Create a relationship of a specified type between two collection-keys.
+func (c *Client) DeleteRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
+	trailingUri := sourceCollection + "/" + sourceKey + "/relation/" + kind + "/" + sinkCollection + "/" + sinkKey + "?purge=true"
+	resp, err := c.doRequest("DELETE", trailingUri, nil, nil)
+
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 204 {
+		return newError(resp)
+	}
+
+	return nil
+}
+
+// Marshall the value of a GraphResult into the provided object.
+func (r *GraphResult) Value(value interface{}) error {
+	return json.Unmarshal(r.RawValue, value)
 }
