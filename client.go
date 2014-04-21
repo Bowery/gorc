@@ -98,6 +98,20 @@ func NewClientWithTransport(authToken string, transport *http.Transport) *Client
 	}
 }
 
+// Check that Orchestrate is reachable.
+func (c *Client) Ping() error {
+	resp, err := c.doRequest("HEAD", "", nil, nil)
+	if err != nil {
+		return nil
+	}
+
+	if resp.StatusCode != 200 {
+		return newError(resp)
+	}
+
+	return nil
+}
+
 // Creates a new OrchestrateError from a given http.Response object.
 func newError(resp *http.Response) error {
 	oe := &OrchestrateError{
