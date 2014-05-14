@@ -119,7 +119,8 @@ func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (
 		return nil, newError(resp)
 	}
 
-	ref := strings.SplitAfter(resp.Header.Get("Location"), "/")[5]
+	etag := resp.Header.Get("Etag")
+	ref := etag[1 : len(etag)-1]
 
 	return &Path{
 		Collection: path.Collection,
