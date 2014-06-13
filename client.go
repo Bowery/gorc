@@ -146,7 +146,7 @@ func (c *Client) doRequest(method, trailing string, headers map[string]string, b
 		req.Header.Add(k, v)
 	}
 
-	if method == "PUT" {
+	if method == "PUT" || method == "POST" {
 		req.Header.Add("Content-Type", "application/json")
 	}
 
