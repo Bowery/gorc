@@ -80,7 +80,7 @@ type Path struct {
 	Collection string `json:"collection"`
 	Key        string `json:"key"`
 	Ref        string `json:"ref"`
-	Tombstone  bool   `json:"tombstone",omitempty`
+	Tombstone  bool   `json:"tombstone,omitempty"`
 }
 
 // Returns a new Client object that will use the given authToken for
