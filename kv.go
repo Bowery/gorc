@@ -207,6 +207,20 @@ func (c *Client) ListStart(collection, start string, limit int) (*KVResults, err
 	return c.doList(trailingUri)
 }
 
+// List the values in a collection within a given range of keys, starting AT the
+// specified key and stopping BEFORE the end key
+func (c *Client) ListRange(collection, start string, end string, limit int) (*KVResults, error) {
+	queryVariables := url.Values{
+		"limit":    []string{strconv.Itoa(limit)},
+		"startKey": []string{start},
+		"endKey":   []string{end},
+	}
+
+	trailingUri := collection + "?" + queryVariables.Encode()
+
+	return c.doList(trailingUri)
+}
+
 // Get the page of key/value list results that follow that provided set.
 func (c *Client) ListGetNext(results *KVResults) (*KVResults, error) {
 	return c.doList(results.Next[4:])
