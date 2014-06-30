@@ -5,6 +5,7 @@ package gorc
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
 	"strconv"
@@ -126,6 +127,8 @@ func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (
 	parts := strings.SplitAfter(resp.Header.Get("Location"), "/")
 	if len(parts) >= 6 {
 		ref = parts[5]
+	} else {
+		return nil, fmt.Errorf("Missing ref component: %s", resp.Header.Get("Location"))
 	}
 
 	return &Path{
