@@ -102,7 +102,7 @@ func NewClientWithTransport(authToken string, transport *http.Transport) *Client
 func (c *Client) Ping() error {
 	resp, err := c.doRequest("HEAD", "", nil, nil)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if resp.StatusCode != 200 {
