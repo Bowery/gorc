@@ -28,7 +28,7 @@ import (
 //  http://bridge.grumpy-troll.org/2014/05/golang-tls-comodo/
 import _ "crypto/sha512"
 
-const (
+var (
 	// The root path for all API endpoints.
 	rootUri = "https://api.orchestrate.io/v0/"
 )
@@ -43,7 +43,7 @@ var (
 	// This is the default http.Transport that will be associated with new
 	// clients. If overwritten then only new clients will be impacted, old
 	// clients will continue to use the pre-existing transport.
-	DefaultTransport *http.Transport = &http.Transport{
+	DefaultTransport http.RoundTripper = &http.Transport{
 		// In the default configuration we allow 4 idle connections to the
 		// api server. This limits the number of live connections to our
 		// load balancer which reduces load. If needed this can be increased
@@ -99,7 +99,7 @@ func NewClient(authToken string) *Client {
 
 // Like NewClient, except that it allows a specific http.Transport to be
 // provided for use, rather than DefaultTransport.
-func NewClientWithTransport(authToken string, transport *http.Transport) *Client {
+func NewClientWithTransport(authToken string, transport http.RoundTripper) *Client {
 	return &Client{
 		httpClient: &http.Client{Transport: transport},
 		authToken:  authToken,
@@ -108,15 +108,11 @@ func NewClientWithTransport(authToken string, transport *http.Transport) *Client
 
 // Check that Orchestrate is reachable.
 func (c *Client) Ping() error {
-	resp, err := c.doRequest("HEAD", "", nil, nil)
-	if err != nil {
+	if resp, err := c.doRequest("HEAD", "", nil, nil); err != nil {
 		return err
-	}
-
-	if resp.StatusCode != 200 {
+	} else if resp.StatusCode != 200 {
 		return newError(resp)
 	}
-
 	return nil
 }
 
@@ -141,7 +137,6 @@ func (e OrchestrateError) Error() string {
 	return fmt.Sprintf("%s (%d): %s", e.Status, e.StatusCode, e.Message)
 }
 
-// Executes an HTTP request.
 func (c *Client) doRequest(method, trailing string, headers map[string]string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, rootUri+trailing, body)
 	if err != nil {

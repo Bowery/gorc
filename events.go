@@ -48,7 +48,6 @@ func (c *Client) GetEventsInRangeWithLimit(collection, key, kind string, start, 
 	return c.doGetEvents(trailingUri)
 }
 
-
 // Put an event of the specified type to provided collection-key pair.
 func (c *Client) PutEvent(collection, key, kind string, value interface{}) error {
 	reader, writer := io.Pipe()
@@ -89,11 +88,9 @@ func (c *Client) PutEventWithTimeRaw(collection, key, kind string, time int64, v
 // Execute event get.
 func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 	resp, err := c.doRequest("GET", trailingUri, nil, nil)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
@@ -115,7 +112,6 @@ func (c *Client) doPutEvent(trailingUri string, value io.Reader) error {
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 204 {
