@@ -1,4 +1,16 @@
-// Copyright 2014, Orchestrate.IO, Inc.
+// Copyright 2014 Orchestrate, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package gorc
 
@@ -47,7 +59,6 @@ func (c *Client) GetEventsInRangeWithLimit(collection, key, kind string, start, 
 
 	return c.doGetEvents(trailingUri)
 }
-
 
 // Put an event of the specified type to provided collection-key pair.
 func (c *Client) PutEvent(collection, key, kind string, value interface{}) error {
