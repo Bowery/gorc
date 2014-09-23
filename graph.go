@@ -16,6 +16,8 @@ package gorc
 
 import (
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"strings"
 )
 
@@ -40,13 +42,14 @@ func (c *Client) GetRelations(collection, key string, hops []string) (*GraphResu
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 
+	// If the response was an error we return an OrchestrateError object.
 	if resp.StatusCode != 200 {
 		return nil, newError(resp)
 	}
 
+	// Read the body into the results.
 	decoder := json.NewDecoder(resp.Body)
 	result := new(GraphResults)
 	if err := decoder.Decode(result); err != nil {
@@ -63,12 +66,16 @@ func (c *Client) PutRelation(sourceCollection, sourceKey, kind, sinkCollection, 
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 
+	// If the response was an error we return an OrchestrateError object which
+	// reads the body.
 	if resp.StatusCode != 204 {
 		return newError(resp)
 	}
+
+	// Otherwise we need to read it ourselves.
+	io.Copy(ioutil.Discard, resp.Body)
 
 	return nil
 }
@@ -77,16 +84,19 @@ func (c *Client) PutRelation(sourceCollection, sourceKey, kind, sinkCollection, 
 func (c *Client) DeleteRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
 	trailingUri := sourceCollection + "/" + sourceKey + "/relation/" + kind + "/" + sinkCollection + "/" + sinkKey + "?purge=true"
 	resp, err := c.doRequest("DELETE", trailingUri, nil, nil)
-
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 
+	// If the response was an error we return an OrchestrateError object
+	// which reads the body.
 	if resp.StatusCode != 204 {
 		return newError(resp)
 	}
+
+	// Otherwise we need to read it ourselves.
+	io.Copy(ioutil.Discard, resp.Body)
 
 	return nil
 }

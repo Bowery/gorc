@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"strconv"
 	"strings"
@@ -48,13 +49,15 @@ func (c *Client) GetPath(path *Path) (*KVResult, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 
+	// If the request ended in error then read the body into an
+	// OrchestrateError object.
 	if resp.StatusCode != 200 {
 		return nil, newError(resp)
 	}
 
+	// Decode the body into a JSON object.
 	// TODO: Check for a content-length header so we can pre-allocate buffer
 	// space.
 	buf := bytes.NewBuffer(nil)
@@ -128,13 +131,18 @@ func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 
+	// If the request ended in error then read the body into an
+	// OrchestrateError object.
 	if resp.StatusCode != 201 {
 		return nil, newError(resp)
 	}
 
+	// Read the body so the connection can be properly reused.
+	io.Copy(ioutil.Discard, resp.Body)
+
+	// Parse the ref of the returned object.
 	ref := ""
 	parts := strings.SplitAfter(resp.Header.Get("Location"), "/")
 	if len(parts) >= 6 {
@@ -143,6 +151,7 @@ func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (
 		return nil, fmt.Errorf("Missing ref component: %s", resp.Header.Get("Location"))
 	}
 
+	// Return the results.
 	return &Path{
 		Collection: path.Collection,
 		Key:        path.Key,
@@ -178,16 +187,19 @@ func (c *Client) DeleteCollection(collection string) error {
 // Execute delete
 func (c *Client) doDelete(trailingUri string, headers map[string]string) error {
 	resp, err := c.doRequest("DELETE", trailingUri, headers, nil)
-
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 
+	// If the request ended in error then read the body into an
+	// OrchestrateError object.
 	if resp.StatusCode != 204 {
 		return newError(resp)
 	}
+
+	// Read the body so the connection can be properly reused.
+	io.Copy(ioutil.Discard, resp.Body)
 
 	return nil
 }
@@ -254,13 +266,15 @@ func (c *Client) doList(trailingUri string) (*KVResults, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 
+	// If the request ended in error then read the body into an
+	// OrchestrateError object.
 	if resp.StatusCode != 200 {
 		return nil, newError(resp)
 	}
 
+	// Decode the returned JSON into the results.
 	decoder := json.NewDecoder(resp.Body)
 	result := new(KVResults)
 	if err := decoder.Decode(result); err != nil {

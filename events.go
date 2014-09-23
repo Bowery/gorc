@@ -17,6 +17,7 @@ package gorc
 import (
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"strconv"
 )
@@ -100,17 +101,18 @@ func (c *Client) PutEventWithTimeRaw(collection, key, kind string, time int64, v
 // Execute event get.
 func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 	resp, err := c.doRequest("GET", trailingUri, nil, nil)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 
+	// If the request ended in error then read the body into an
+	// OrchestrateError object.
 	if resp.StatusCode != 200 {
 		return nil, newError(resp)
 	}
 
+	// Read the entire body into a new JSON object.
 	decoder := json.NewDecoder(resp.Body)
 	results := new(EventResults)
 	if err = decoder.Decode(results); err != nil {
@@ -126,12 +128,18 @@ func (c *Client) doPutEvent(trailingUri string, value io.Reader) error {
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 
+	// If the request ended in error then read the body into an
+	// OrchestrateError object.
 	if resp.StatusCode != 204 {
 		return newError(resp)
 	}
+
+	// Read the body so the connection can be properly reused.
+	io.Copy(ioutil.Discard, resp.Body)
+
+	// Success
 	return nil
 }
 

@@ -29,6 +29,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"runtime"
 	"time"
 )
 
@@ -40,12 +41,10 @@ import (
 //  http://bridge.grumpy-troll.org/2014/05/golang-tls-comodo/
 import _ "crypto/sha512"
 
-const (
-	// The root path for all API endpoints.
-	rootUri = "https://api.orchestrate.io/v0/"
-)
-
 var (
+	// This is the default hostname that will be queried for API calls.
+	DefaultAPIHost = "api.orchestrate.io"
+
 	// The default timeout that will be used for connections. This is used
 	// with the default Transport to establish how long a connection attempt
 	// can take. This is not the data transfer timeout. Changing this will
@@ -78,9 +77,27 @@ var (
 
 // An Orchestrate Client object.
 type Client struct {
-	httpClient *http.Client
-	authToken  string
+	// This is the host name that will be used in client queries. By default
+	// this will be set to DefaultAPIHost, and if this is left empty
+	// then that default will be used as well.
+	APIHost string
+
+	// This is the HTTP client that will be used to perform HTTP queries
+	// against Orchestrate.
+	HTTPClient *http.Client
+
+	// The authorization token passed into NewClient().
+	authToken string
 }
+
+// We keep the client version here. This is updated when arbitrarily,
+// but should change any time we need to track the version that a
+// given client is actually using.
+var clientVersion int = 1
+
+// The user agent that should be sent to the Orchestrate servers.
+var userAgent string = fmt.Sprintf("gorc/%d (%s)",
+	clientVersion, runtime.Version())
 
 // An implementation of 'error' that exposes all the orchestrate specific
 // error details.
@@ -106,16 +123,19 @@ type Path struct {
 // authorization against Orchestrate. This token can be obtained
 // at http://dashboard.orchestrate.io
 func NewClient(authToken string) *Client {
-	return NewClientWithTransport(authToken, DefaultTransport)
-}
-
-// Like NewClient, except that it allows a specific http.Transport to be
-// provided for use, rather than DefaultTransport.
-func NewClientWithTransport(authToken string, transport *http.Transport) *Client {
 	return &Client{
-		httpClient: &http.Client{Transport: transport},
+		APIHost:    DefaultAPIHost,
+		HTTPClient: nil,
 		authToken:  authToken,
 	}
+}
+
+// This function is deprecated. Please just set the HTTPClient field on
+// the client object manually.
+func NewClientWithTransport(authToken string, transport *http.Transport) *Client {
+	client := NewClient(authToken)
+	client.HTTPClient = &http.Client{Transport: transport}
+	return client
 }
 
 // Check that Orchestrate is reachable.
@@ -125,9 +145,14 @@ func (c *Client) Ping() error {
 		return err
 	}
 
+	// If the request ended in error then read the body into an
+	// OrchestrateError object.
 	if resp.StatusCode != 200 {
 		return newError(resp)
 	}
+
+	// Read the body so the connection can be properly reused.
+	io.Copy(ioutil.Discard, resp.Body)
 
 	return nil
 }
@@ -155,20 +180,40 @@ func (e OrchestrateError) Error() string {
 
 // Executes an HTTP request.
 func (c *Client) doRequest(method, trailing string, headers map[string]string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, rootUri+trailing, body)
+	// Get the URL that we should be talking too.
+	host := c.APIHost
+	if host == "" {
+		host = DefaultAPIHost
+	}
+	url := "https://" + host + "/v0/" + trailing
+
+	// Create the new Request.
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
 	}
 
+	// Ensure that the query gets the authToken as username.
 	req.SetBasicAuth(c.authToken, "")
 
+	// Add any headers that the client provided.
 	for k, v := range headers {
 		req.Header.Add(k, v)
 	}
+	req.Header.Add("User-Agent", userAgent)
 
-	if method == "PUT" {
+	// If the client request has a body then we need to set a Content-Type
+	// header.
+	if body != nil {
 		req.Header.Add("Content-Type", "application/json")
 	}
 
-	return c.httpClient.Do(req)
+	// If the HTTPClient is nil we use the DefaultTransport provided in this
+	// package, otherwise we use the specific HTTPClient that the caller set
+	// in the client object.
+	client := c.HTTPClient
+	if client == nil {
+		client = &http.Client{Transport: DefaultTransport}
+	}
+	return client.Do(req)
 }
