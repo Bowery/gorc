@@ -30,6 +30,7 @@ import (
 	"net"
 	"net/http"
 	"runtime"
+	"sync/atomic"
 	"time"
 )
 
@@ -75,6 +76,28 @@ var (
 	}
 )
 
+// We keep the client version here. This is updated when arbitrarily,
+// but should change any time we need to track the version that a
+// given client is actually using.
+var clientVersion int = 1
+
+// The user agent that should be sent to the Orchestrate servers.
+var userAgent string = fmt.Sprintf("gorc/%d (%s)",
+	clientVersion, runtime.Version())
+
+// This user agent is used if a client has been using deprecated functions.
+// Then intention is to allow us reach out to the users prior to removing
+// them from the client.
+var userAgentDeprecated string = fmt.Sprintf("gorc/%d (%s) [deprecated]",
+	clientVersion, runtime.Version())
+
+// A representation of a Key/Value object's path within Orchestrate.
+type Path struct {
+	Collection string `json:"collection"`
+	Key        string `json:"key"`
+	Ref        string `json:"ref"`
+}
+
 // An Orchestrate Client object.
 type Client struct {
 	// This is the host name that will be used in client queries. By default
@@ -88,35 +111,10 @@ type Client struct {
 
 	// The authorization token passed into NewClient().
 	authToken string
-}
 
-// We keep the client version here. This is updated when arbitrarily,
-// but should change any time we need to track the version that a
-// given client is actually using.
-var clientVersion int = 1
-
-// The user agent that should be sent to the Orchestrate servers.
-var userAgent string = fmt.Sprintf("gorc/%d (%s)",
-	clientVersion, runtime.Version())
-
-// An implementation of 'error' that exposes all the orchestrate specific
-// error details.
-type OrchestrateError struct {
-	// The status string returned from the HTTP call.
-	Status string `json:"-"`
-
-	// The status, as an integer, returned from the HTTP call.
-	StatusCode int `json:"-"`
-
-	// The Orchestrate specific message representing the error.
-	Message string `json:"message"`
-}
-
-// A representation of a Key/Value object's path within Orchestrate.
-type Path struct {
-	Collection string `json:"collection"`
-	Key        string `json:"key"`
-	Ref        string `json:"ref"`
+	// This value will be automatically set to a non zero value if a call is
+	// made to any deprecated function.
+	deprecated int32
 }
 
 // Returns a new Client object that will use the given authToken for
@@ -135,6 +133,7 @@ func NewClient(authToken string) *Client {
 func NewClientWithTransport(authToken string, transport *http.Transport) *Client {
 	client := NewClient(authToken)
 	client.HTTPClient = &http.Client{Transport: transport}
+	client.deprecated = 1
 	return client
 }
 
@@ -155,27 +154,6 @@ func (c *Client) Ping() error {
 	io.Copy(ioutil.Discard, resp.Body)
 
 	return nil
-}
-
-// Creates a new OrchestrateError from a given http.Response object.
-func newError(resp *http.Response) error {
-	oe := &OrchestrateError{
-		Status:     resp.Status,
-		StatusCode: resp.StatusCode,
-	}
-	if data, err := ioutil.ReadAll(resp.Body); err != nil {
-		oe.Message = fmt.Sprintf("Can not read HTTP response: %s", err)
-		return oe
-	} else if err := json.Unmarshal(data, oe); err != nil {
-		oe.Message = fmt.Sprintf("Can not unmarshal JSON response '''%s''': %s", string(data), err)
-		return oe
-	}
-
-	return oe
-}
-
-func (e OrchestrateError) Error() string {
-	return fmt.Sprintf("%s (%d): %s", e.Status, e.StatusCode, e.Message)
 }
 
 // Executes an HTTP request.
@@ -200,7 +178,11 @@ func (c *Client) doRequest(method, trailing string, headers map[string]string, b
 	for k, v := range headers {
 		req.Header.Add(k, v)
 	}
-	req.Header.Add("User-Agent", userAgent)
+	if atomic.LoadInt32(&c.deprecated) == 0 {
+		req.Header.Add("User-Agent", userAgent)
+	} else {
+		req.Header.Add("User-Agent", userAgentDeprecated)
+	}
 
 	// If the client request has a body then we need to set a Content-Type
 	// header.
@@ -216,4 +198,41 @@ func (c *Client) doRequest(method, trailing string, headers map[string]string, b
 		client = &http.Client{Transport: DefaultTransport}
 	}
 	return client.Do(req)
+}
+
+//
+// OrchestrateError
+//
+
+// An implementation of 'error' that exposes all the orchestrate specific
+// error details.
+type OrchestrateError struct {
+	// The status string returned from the HTTP call.
+	Status string `json:"-"`
+
+	// The status, as an integer, returned from the HTTP call.
+	StatusCode int `json:"-"`
+
+	// The Orchestrate specific message representing the error.
+	Message string `json:"message"`
+}
+
+// Creates a new OrchestrateError from a given http.Response object.
+func newError(resp *http.Response) error {
+	oe := &OrchestrateError{
+		Status:     resp.Status,
+		StatusCode: resp.StatusCode,
+	}
+	decoder := json.NewDecoder(resp.Body)
+	if err := decoder.Decode(oe); err != nil {
+		oe.Message = err.Error()
+		return oe
+	}
+
+	return oe
+}
+
+// Convert the error to a meaningful string.
+func (e OrchestrateError) Error() string {
+	return fmt.Sprintf("%s (%d): %s", e.Status, e.StatusCode, e.Message)
 }
