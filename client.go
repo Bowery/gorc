@@ -79,7 +79,7 @@ var (
 // We keep the client version here. This is updated when arbitrarily,
 // but should change any time we need to track the version that a
 // given client is actually using.
-const clientVersion = 1
+const clientVersion = 2
 
 // The user agent that should be sent to the Orchestrate servers.
 var userAgent string = fmt.Sprintf("gorc/%d (%s)",
@@ -130,9 +130,11 @@ func NewClient(authToken string) *Client {
 
 // This function is deprecated. Please just set the HTTPClient field on
 // the client object manually.
-func NewClientWithTransport(authToken string, transport *http.Transport) *Client {
-	client := NewClient(authToken)
-	client.HTTPClient = &http.Client{Transport: transport}
+func NewClientWithTransport(
+	deprecated_authToken string, deprecated_transport *http.Transport,
+) *Client {
+	client := NewClient(deprecated_authToken)
+	client.HTTPClient = &http.Client{Transport: deprecated_transport}
 	client.deprecated = 1
 	return client
 }
