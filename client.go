@@ -79,7 +79,7 @@ var (
 // We keep the client version here. This is updated when arbitrarily,
 // but should change any time we need to track the version that a
 // given client is actually using.
-var clientVersion int = 1
+const clientVersion = 1
 
 // The user agent that should be sent to the Orchestrate servers.
 var userAgent string = fmt.Sprintf("gorc/%d (%s)",
