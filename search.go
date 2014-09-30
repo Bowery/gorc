@@ -39,11 +39,35 @@ type SearchResult struct {
 // Search a collection with a Lucene Query Parser Syntax Query
 // (http://lucene.apache.org/core/4_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Overview)
 // and with a specified size limit and offset.
-func (c *Client) Search(collection, query string, limit, offset int) (*SearchResults, error) {
+func (c *Client) Search(
+	collection, query string, limit, offset int,
+) (*SearchResults, error) {
 	queryVariables := url.Values{
 		"query":  []string{query},
 		"limit":  []string{strconv.Itoa(limit)},
 		"offset": []string{strconv.Itoa(offset)},
+	}
+
+	trailingUri := collection + "?" + queryVariables.Encode()
+
+	return c.doSearch(trailingUri)
+}
+
+// Like Search() except this sorts the search results.
+//
+// sortBy is a dot joined field list followed by either "asc" or "desc".
+// for example: "value.field1:asc" would sort all of the results, ascending
+// by the value in "field1" in each document.
+//
+// TODO: Add a link to the blog post documenting this.
+func (c *Client) SearchSorted(
+	collection, query, sortBy string, limit, offset int,
+) (*SearchResults, error) {
+	queryVariables := url.Values{
+		"query":  []string{query},
+		"limit":  []string{strconv.Itoa(limit)},
+		"offset": []string{strconv.Itoa(offset)},
+		"sort":   []string{sortBy},
 	}
 
 	trailingUri := collection + "?" + queryVariables.Encode()
