@@ -33,6 +33,7 @@ type SearchResults struct {
 type SearchResult struct {
 	Path     Path            `json:"path"`
 	Score    float64         `json:"score"`
+	Distance float64         `json:"distance"`
 	RawValue json.RawMessage `json:"value"`
 }
 
