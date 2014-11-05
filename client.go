@@ -24,6 +24,7 @@ package gorc
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -79,7 +80,7 @@ var (
 // We keep the client version here. This is updated when arbitrarily,
 // but should change any time we need to track the version that a
 // given client is actually using.
-const clientVersion = 2
+const clientVersion = 3
 
 // The user agent that should be sent to the Orchestrate servers.
 var userAgent string = fmt.Sprintf("gorc/%d (%s)",
@@ -221,14 +222,16 @@ type OrchestrateError struct {
 
 // Creates a new OrchestrateError from a given http.Response object.
 func newError(resp *http.Response) error {
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 	oe := &OrchestrateError{
 		Status:     resp.Status,
 		StatusCode: resp.StatusCode,
 	}
-	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(oe); err != nil {
-		oe.Message = err.Error()
-		return oe
+	if err := json.Unmarshal(body, oe); err != nil {
+		return errors.New(string(body))
 	}
 
 	return oe
