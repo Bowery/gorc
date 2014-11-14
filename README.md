@@ -61,4 +61,10 @@ Usage examples
 
     // Put Relation
     c.PutRelation("sourceCollection", "sourceKey", "kind", "sinkCollection", "sinkKey")
+
+    // Get a value at a particular ref
+    valueAtRef := c.GetRef("collection", "key", "ref")
+
+    // List the last 10 values of a collection-key pair
+    valueHistory := c.ListRefs("collection", "key", 10, true)
 ```

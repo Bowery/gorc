@@ -97,6 +97,7 @@ type Path struct {
 	Collection string `json:"collection"`
 	Key        string `json:"key"`
 	Ref        string `json:"ref"`
+	Tombstone  bool   `json:"tombstone,omitempty"`
 }
 
 // An Orchestrate Client object.
