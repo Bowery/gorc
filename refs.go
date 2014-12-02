@@ -61,7 +61,7 @@ func (c *Client) ListRefsGetNext(results *RefResults) (*RefResults, error) {
 
 // Execute a ref list operation.
 func (c *Client) doListRefs(trailingUri string) (*RefResults, error) {
-	resp, err := c.doRequest("GET", trailingUri, nil, nil)
+	resp, err := c.oldDoRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (c *Client) doListRefs(trailingUri string) (*RefResults, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, newError(resp)
+		return nil, oldNewError(resp)
 	}
 
 	decoder := json.NewDecoder(resp.Body)

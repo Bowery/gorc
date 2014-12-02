@@ -100,7 +100,7 @@ func (c *Client) PutEventWithTimeRaw(collection, key, kind string, time int64, v
 
 // Execute event get.
 func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
-	resp, err := c.doRequest("GET", trailingUri, nil, nil)
+	resp, err := c.oldDoRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 	// If the request ended in error then read the body into an
 	// OrchestrateError object.
 	if resp.StatusCode != 200 {
-		return nil, newError(resp)
+		return nil, oldNewError(resp)
 	}
 
 	// Read the entire body into a new JSON object.
@@ -124,7 +124,7 @@ func (c *Client) doGetEvents(trailingUri string) (*EventResults, error) {
 
 // Execute event put.
 func (c *Client) doPutEvent(trailingUri string, value io.Reader) error {
-	resp, err := c.doRequest("PUT", trailingUri, nil, value)
+	resp, err := c.oldDoRequest("PUT", trailingUri, nil, value)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (c *Client) doPutEvent(trailingUri string, value io.Reader) error {
 	// If the request ended in error then read the body into an
 	// OrchestrateError object.
 	if resp.StatusCode != 204 {
-		return newError(resp)
+		return oldNewError(resp)
 	}
 
 	// Read the body so the connection can be properly reused.

@@ -45,7 +45,7 @@ func (c *Client) Get(collection, key string) (*KVResult, error) {
 
 // Get the value at a path.
 func (c *Client) GetPath(path *Path) (*KVResult, error) {
-	resp, err := c.doRequest("GET", path.trailingGetURI(), nil, nil)
+	resp, err := c.oldDoRequest("GET", path.trailingGetURI(), nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (c *Client) GetPath(path *Path) (*KVResult, error) {
 	// If the request ended in error then read the body into an
 	// OrchestrateError object.
 	if resp.StatusCode != 200 {
-		return nil, newError(resp)
+		return nil, oldNewError(resp)
 	}
 
 	// Decode the body into a JSON object.
@@ -127,7 +127,7 @@ func (c *Client) PutIfAbsentRaw(collection, key string, value io.Reader) (*Path,
 
 // Execute a key/value Put.
 func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (*Path, error) {
-	resp, err := c.doRequest("PUT", path.trailingPutURI(), headers, value)
+	resp, err := c.oldDoRequest("PUT", path.trailingPutURI(), headers, value)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (
 	// If the request ended in error then read the body into an
 	// OrchestrateError object.
 	if resp.StatusCode != 201 {
-		return nil, newError(resp)
+		return nil, oldNewError(resp)
 	}
 
 	// Read the body so the connection can be properly reused.
@@ -179,14 +179,16 @@ func (c *Client) Purge(collection, key string) error {
 	return c.doDelete(collection+"/"+key+"?purge=true", nil)
 }
 
+/* Replaced by DeleteCollection in client_gorc2.go
 // Delete a collection.
 func (c *Client) DeleteCollection(collection string) error {
 	return c.doDelete(collection+"?force=true", nil)
 }
+*/
 
 // Execute delete
 func (c *Client) doDelete(trailingUri string, headers map[string]string) error {
-	resp, err := c.doRequest("DELETE", trailingUri, headers, nil)
+	resp, err := c.oldDoRequest("DELETE", trailingUri, headers, nil)
 	if err != nil {
 		return err
 	}
@@ -195,7 +197,7 @@ func (c *Client) doDelete(trailingUri string, headers map[string]string) error {
 	// If the request ended in error then read the body into an
 	// OrchestrateError object.
 	if resp.StatusCode != 204 {
-		return newError(resp)
+		return oldNewError(resp)
 	}
 
 	// Read the body so the connection can be properly reused.
@@ -241,8 +243,8 @@ func (c *Client) ListStart(collection, start string, limit int) (*KVResults, err
 	return c.doList(trailingUri)
 }
 
-// List the values in a collection within a given range of keys, starting with the
-// specified key and stopping at the end key
+// List the values in a collection within a given range of keys, starting with
+// the specified key and stopping at the end key
 func (c *Client) ListRange(collection, start, end string, limit int) (*KVResults, error) {
 	queryVariables := url.Values{
 		"limit":    []string{strconv.Itoa(limit)},
@@ -262,7 +264,7 @@ func (c *Client) ListGetNext(results *KVResults) (*KVResults, error) {
 
 // Execute a key/value list operation.
 func (c *Client) doList(trailingUri string) (*KVResults, error) {
-	resp, err := c.doRequest("GET", trailingUri, nil, nil)
+	resp, err := c.oldDoRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +273,7 @@ func (c *Client) doList(trailingUri string) (*KVResults, error) {
 	// If the request ended in error then read the body into an
 	// OrchestrateError object.
 	if resp.StatusCode != 200 {
-		return nil, newError(resp)
+		return nil, oldNewError(resp)
 	}
 
 	// Decode the returned JSON into the results.

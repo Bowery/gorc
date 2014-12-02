@@ -88,7 +88,7 @@ func (c *Client) SearchGetPrev(results *SearchResults) (*SearchResults, error) {
 
 // Execute a search request.
 func (c *Client) doSearch(trailingUri string) (*SearchResults, error) {
-	resp, err := c.doRequest("GET", trailingUri, nil, nil)
+	resp, err := c.oldDoRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (c *Client) doSearch(trailingUri string) (*SearchResults, error) {
 	// If the request ended in error then read the body into an
 	// OrchestrateError object.
 	if resp.StatusCode != 200 {
-		return nil, newError(resp)
+		return nil, oldNewError(resp)
 	}
 
 	// Decode the body into a JSON object.

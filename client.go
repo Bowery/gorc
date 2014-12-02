@@ -31,7 +31,6 @@ import (
 	"net"
 	"net/http"
 	"runtime"
-	"sync/atomic"
 	"time"
 )
 
@@ -80,7 +79,7 @@ var (
 // We keep the client version here. This is updated when arbitrarily,
 // but should change any time we need to track the version that a
 // given client is actually using.
-const clientVersion = 3
+const clientVersion = 4
 
 // The user agent that should be sent to the Orchestrate servers.
 var userAgent string = fmt.Sprintf("gorc/%d (%s)",
@@ -141,9 +140,10 @@ func NewClientWithTransport(
 	return client
 }
 
+/* Ping was completely replaced by the gorc2() calls in kv_gorc2.go.
 // Check that Orchestrate is reachable.
 func (c *Client) Ping() error {
-	resp, err := c.doRequest("HEAD", "", nil, nil)
+	resp, err := c.oldDoRequest("HEAD", "", nil, nil)
 	if err != nil {
 		return err
 	}
@@ -158,10 +158,16 @@ func (c *Client) Ping() error {
 	io.Copy(ioutil.Discard, resp.Body)
 
 	return nil
-}
+} */
 
 // Executes an HTTP request.
-func (c *Client) doRequest(method, trailing string, headers map[string]string, body io.Reader) (*http.Response, error) {
+func (c *Client) oldDoRequest(
+	method, trailing string, headers map[string]string, body io.Reader,
+) (*http.Response, error) {
+	// This method is only used by older deprecated functions so no matter
+	// how we got here it means that the user is using a deprecated function.
+	c.deprecated = 1
+
 	// Get the URL that we should be talking too.
 	host := c.APIHost
 	if host == "" {
@@ -182,11 +188,7 @@ func (c *Client) doRequest(method, trailing string, headers map[string]string, b
 	for k, v := range headers {
 		req.Header.Add(k, v)
 	}
-	if atomic.LoadInt32(&c.deprecated) == 0 {
-		req.Header.Add("User-Agent", userAgent)
-	} else {
-		req.Header.Add("User-Agent", userAgentDeprecated)
-	}
+	req.Header.Add("User-Agent", userAgentDeprecated)
 
 	// If the client request has a body then we need to set a Content-Type
 	// header.
@@ -222,7 +224,7 @@ type OrchestrateError struct {
 }
 
 // Creates a new OrchestrateError from a given http.Response object.
-func newError(resp *http.Response) error {
+func oldNewError(resp *http.Response) error {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err

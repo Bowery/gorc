@@ -38,7 +38,7 @@ func (c *Client) GetRelations(collection, key string, hops []string) (*GraphResu
 	relationsPath := strings.Join(hops, "/")
 
 	trailingUri := collection + "/" + key + "/relations/" + relationsPath
-	resp, err := c.doRequest("GET", trailingUri, nil, nil)
+	resp, err := c.oldDoRequest("GET", trailingUri, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (c *Client) GetRelations(collection, key string, hops []string) (*GraphResu
 
 	// If the response was an error we return an OrchestrateError object.
 	if resp.StatusCode != 200 {
-		return nil, newError(resp)
+		return nil, oldNewError(resp)
 	}
 
 	// Read the body into the results.
@@ -62,7 +62,7 @@ func (c *Client) GetRelations(collection, key string, hops []string) (*GraphResu
 // Create a relationship of a specified type between two collection-keys.
 func (c *Client) PutRelation(sourceCollection, sourceKey, kind, sinkCollection, sinkKey string) error {
 	trailingUri := sourceCollection + "/" + sourceKey + "/relation/" + kind + "/" + sinkCollection + "/" + sinkKey
-	resp, err := c.doRequest("PUT", trailingUri, nil, nil)
+	resp, err := c.oldDoRequest("PUT", trailingUri, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (c *Client) PutRelation(sourceCollection, sourceKey, kind, sinkCollection, 
 	// If the response was an error we return an OrchestrateError object which
 	// reads the body.
 	if resp.StatusCode != 204 {
-		return newError(resp)
+		return oldNewError(resp)
 	}
 
 	// Otherwise we need to read it ourselves.
@@ -83,7 +83,7 @@ func (c *Client) PutRelation(sourceCollection, sourceKey, kind, sinkCollection, 
 // Create a relationship of a specified type between two collection-keys.
 func (c *Client) DeleteRelation(sourceCollection string, sourceKey string, kind string, sinkCollection string, sinkKey string) error {
 	trailingUri := sourceCollection + "/" + sourceKey + "/relation/" + kind + "/" + sinkCollection + "/" + sinkKey + "?purge=true"
-	resp, err := c.doRequest("DELETE", trailingUri, nil, nil)
+	resp, err := c.oldDoRequest("DELETE", trailingUri, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (c *Client) DeleteRelation(sourceCollection string, sourceKey string, kind 
 	// If the response was an error we return an OrchestrateError object
 	// which reads the body.
 	if resp.StatusCode != 204 {
-		return newError(resp)
+		return oldNewError(resp)
 	}
 
 	// Otherwise we need to read it ourselves.
