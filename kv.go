@@ -38,6 +38,25 @@ type KVResult struct {
 	RawValue json.RawMessage `json:"value"`
 }
 
+// Represents a single operation to be performed when patching an existing
+// object. Each operation can mutate the data in some way, or test that the
+// data is in a specific state.
+type PatchOperation struct {
+	// The operation to perform. This is required and must be a known value
+	// from the list of Ops defined in this package.
+	Op string `json:"op"`
+
+	Path string `json:"path"`
+
+	// The value to use when performing the operation.
+	Value interface{} `json:"value,omitempty"`
+}
+
+// Represents a set PatchOperations that should be applied to a specific
+// item. These will all be performed together, and if any test case
+// fails then no mutations will happen at all.
+type PatchSet []PatchOperation
+
 // Get a collection-key pair's value.
 func (c *Client) Get(collection, key string) (*KVResult, error) {
 	return c.GetPath(&Path{Collection: collection, Key: key})
@@ -128,6 +147,57 @@ func (c *Client) PutIfAbsentRaw(collection, key string, value io.Reader) (*Path,
 // Execute a key/value Put.
 func (c *Client) doPut(path *Path, headers map[string]string, value io.Reader) (*Path, error) {
 	resp, err := c.doRequest("PUT", path.trailingPutURI(), headers, value)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// If the request ended in error then read the body into an
+	// OrchestrateError object.
+	if resp.StatusCode != 201 {
+		return nil, newError(resp)
+	}
+
+	// Read the body so the connection can be properly reused.
+	io.Copy(ioutil.Discard, resp.Body)
+
+	// Parse the ref of the returned object.
+	ref := ""
+	parts := strings.SplitAfter(resp.Header.Get("Location"), "/")
+	if len(parts) >= 6 {
+		ref = parts[5]
+	} else {
+		return nil, fmt.Errorf("Missing ref component: %s", resp.Header.Get("Location"))
+	}
+
+	// Return the results.
+	return &Path{
+		Collection: path.Collection,
+		Key:        path.Key,
+		Ref:        ref,
+	}, err
+}
+
+// Send a set of patch operations for a collection-key pair.
+func (c *Client) Patch(collection string, key string, value PatchSet) (*Path, error) {
+	reader, writer := io.Pipe()
+	encoder := json.NewEncoder(writer)
+
+	go func() { writer.CloseWithError(encoder.Encode(value)) }()
+	return c.PatchRaw(collection, key, reader)
+}
+
+// Send a set of patch operations for a collection-key pair.
+func (c *Client) PatchRaw(collection string, key string, value io.Reader) (*Path, error) {
+	header := map[string]string{
+		"Content-Type": "application/json-patch+json",
+	}
+	return c.doPatch(&Path{Collection: collection, Key: key}, header, value)
+}
+
+// Execute a Patch with partial updates.
+func (c *Client) doPatch(path *Path, headers map[string]string, value io.Reader) (*Path, error) {
+	resp, err := c.doRequest("PATCH", path.trailingPutURI(), headers, value)
 	if err != nil {
 		return nil, err
 	}
@@ -305,4 +375,23 @@ func (p *Path) trailingGetURI() string {
 // Returns the trailing URI part for a PUT request.
 func (p *Path) trailingPutURI() string {
 	return p.Collection + "/" + p.Key
+}
+
+// Replace appends a "Replace" Operation to the UdateSet. Replace operations work like
+// add except that the value must exist prior to the call for the operation
+// to succeed.
+func (ps *PatchSet) Replace(path string, value interface{}) {
+	*ps = append(*ps, PatchOperation{Op: "replace", Path: path, Value: value})
+}
+
+// Inc appends an "Inc" Operation to the UdateSet. Inc operations will increment a
+// counter vie the given value. To decrement the value provide a negative
+// value.
+func (ps *PatchSet) Inc(path string, value float64) {
+	*ps = append(*ps, PatchOperation{Op: "inc", Path: path, Value: value})
+}
+
+// Reset removes the patch operations added previously
+func (ps *PatchSet) Reset() {
+	*ps = make(PatchSet, 0)
 }
